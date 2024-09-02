@@ -96,10 +96,86 @@ print(gyr_df[gyr_df["set"] == 13])
 # Working with datetimes
 # --------------------------------------------------------------
 
+acc_df.info()
+gyr_df.info()
+
+pd.to_datetime(df["epoch (ms)"], unit="ms")
+pd.to_datetime(df["time (01:00)"])
+
+acc_df.index = pd.to_datetime(acc_df["epoch (ms)"], unit="ms")
+gyr_df.index = pd.to_datetime(gyr_df["epoch (ms)"], unit="ms")
+
+del acc_df["epoch (ms)"]
+del acc_df["time (01:00)"]
+del acc_df["elapsed (s)"]
+
+del gyr_df["epoch (ms)"]
+del gyr_df["time (01:00)"]
+del gyr_df["elapsed (s)"]
+
+acc_df.info()
+gyr_df.info()
+
+print(acc_df.sample(13))
+print(gyr_df.sample(13))
 
 # --------------------------------------------------------------
 # Turn into function
 # --------------------------------------------------------------
+
+location = "~/zzz_personal/Data_Science_Analytics/Full_Machine_Learning_Project-Coding_a_Fitness_Tracker_with_Python/data/raw/MetaMotion/MetaMotion/*"
+path = path_finder(location)
+
+data_path = "Coding_a_Fitness_Tracker_with_Python/data/raw/MetaMotion/MetaMotion/"
+
+files = glob(path)
+
+def read_data_from_files(files):
+    acc_df = pd.DataFrame()
+    gyr_df = pd.DataFrame()
+
+    acc_set = 1
+    gyr_set = 1
+
+    for f in files:
+        buffer_arr = f.split("-")
+
+        participant = buffer_arr[1].replace(data_path, "")
+        label = buffer_arr[2]
+        category = buffer_arr[3].split("_")[0].rstrip("123456789")
+
+        df = pd.read_csv(f)
+
+        df["participant"] = participant
+        df["label"] = label
+        df["category"] = category
+
+        if "Accelerometer" in f:
+            df["set"] = acc_set
+            acc_set += 1
+            acc_df = pd.concat([acc_df, df])
+        elif "Gyroscope" in f:
+            df["set"] = gyr_set
+            gyr_set += 1
+            gyr_df = pd.concat([gyr_df, df])
+        else:
+            continue
+    
+    acc_df.index = pd.to_datetime(acc_df["epoch (ms)"], unit="ms")
+    gyr_df.index = pd.to_datetime(gyr_df["epoch (ms)"], unit="ms")
+
+    del acc_df["epoch (ms)"]
+    del acc_df["time (01:00)"]
+    del acc_df["elapsed (s)"]
+
+    del gyr_df["epoch (ms)"]
+    del gyr_df["time (01:00)"]
+    del gyr_df["elapsed (s)"]
+
+    return acc_df, gyr_df
+
+
+acc_df, gyr_df = read_data_from_files(files)
 
 
 # --------------------------------------------------------------
