@@ -87,10 +87,57 @@ plt.legend()
 # Plot multiple axis
 # --------------------------------------------------------------
 
+label = "squat"
+participant = "A"
+all_axes_df = df.query(f"label == '{label}'").query(f"participant == '{participant}'").reset_index()
+
+fig, ax = plt.subplots()
+all_axes_df[["acc_x", "acc_y", "acc_z"]].plot(ax=ax)
+ax.set_xlabel("samples")
+ax.set_ylabel("acc_y")
+plt.legend()
 
 # --------------------------------------------------------------
 # Create a loop to plot all combinations per sensor
 # --------------------------------------------------------------
+
+exercise_labels = df["label"].unique()
+participant_labels = df["participant"].unique()
+
+# For accelerometer data
+for label in exercise_labels:
+    for participant in participant_labels:
+        all_axes_df = (
+            df.query(f"label == '{label}'")
+            .query(f"participant == '{participant}'")
+            .reset_index()
+            )
+        
+        if (len(all_axes_df) > 0):
+            fig, ax = plt.subplots()
+            all_axes_df[["acc_x", "acc_y", "acc_z"]].plot(ax=ax)
+            ax.set_xlabel("samples")
+            ax.set_ylabel("acc")
+            plt.title(f"{label} {participant}".title())
+            plt.legend()
+
+
+# For gyroscope data
+for label in exercise_labels:
+    for participant in participant_labels:
+        all_axes_df = (
+            df.query(f"label == '{label}'")
+            .query(f"participant == '{participant}'")
+            .reset_index()
+            )
+        
+        if (len(all_axes_df) > 0):
+            fig, ax = plt.subplots()
+            all_axes_df[["gyr_x", "gyr_y", "gyr_z"]].plot(ax=ax)
+            ax.set_xlabel("samples")
+            ax.set_ylabel("gyr")
+            plt.title(f"{label} {participant}".title())
+            plt.legend()
 
 
 # --------------------------------------------------------------
