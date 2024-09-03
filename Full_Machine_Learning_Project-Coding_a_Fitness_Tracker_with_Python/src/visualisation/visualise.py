@@ -1,11 +1,17 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib as mpl
+from os.path import realpath as realpath
+
+pd.set_option("mode.copy_on_write", True)
 
 # --------------------------------------------------------------
 # Load data
 # --------------------------------------------------------------
 
+real_path_to_pickle = realpath("../../data/interim/01_data_processed.pkl")
+
+df = pd.read_pickle(real_path_to_pickle)
 
 # --------------------------------------------------------------
 # Plot single columns
