@@ -57,7 +57,7 @@ for label in exercise_labels:
 
 mpl.style.use("seaborn-v0_8-deep")
 mpl.rcParams["figure.figsize"] = (20, 5)
-mpl.rcParams["figure.dpi"] = 100
+mpl.rcParams["figure.dpi"] = 72
 
 # --------------------------------------------------------------
 # Compare medium vs. heavy sets
