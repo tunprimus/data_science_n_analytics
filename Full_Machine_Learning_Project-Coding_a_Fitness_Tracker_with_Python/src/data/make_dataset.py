@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 from glob import glob
 from os.path import expanduser as path_finder
+from os.path import realpath as realpath
 
 pd.set_option("mode.copy_on_write", True)
 
@@ -205,7 +206,33 @@ data_merged.columns = [
 # Accelerometer:    12.500HZ
 # Gyroscope:        25.000Hz
 
+sampling = {
+    "acc_x": "mean",
+    "acc_y": "mean",
+    "acc_z": "mean",
+    "gyr_x": "mean",
+    "gyr_y": "mean",
+    "gyr_z": "mean",
+    "label": "last",
+    "category": "last",
+    "participant": "last",
+    "set": "last"
+}
+
+data_merged[:1000].resample(rule="200ms").apply(sampling)
+
+# Split by day
+days = [g for n, g in data_merged.groupby(pd.Grouper(freq="D"))]
+data_resampled = pd.concat([df.resample(rule="200ms").apply(sampling).dropna() for df in days])
+
+# Convert the set column to int16
+data_resampled["set"] = data_resampled["set"].astype("int16")
+data_resampled.info()
 
 # --------------------------------------------------------------
 # Export dataset
 # --------------------------------------------------------------
+
+real_path_to_interim = realpath("../../data/interim")
+
+data_resampled.to_pickle(f"{real_path_to_interim}/01_data_processed.pkl")
