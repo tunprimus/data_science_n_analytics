@@ -163,3 +163,32 @@ ax[1].set_xlabel("samples")
 # --------------------------------------------------------------
 # Loop over all combinations and export for both sensors
 # --------------------------------------------------------------
+
+real_path_to_figures = realpath("../../reports/figures/")
+
+exercise_labels = df["label"].unique()
+participant_labels = df["participant"].unique()
+
+# Combined plots of all data from both sensors
+for label in exercise_labels:
+    for participant in participant_labels:
+        combined_plot_df = (
+            df.query(f"label == '{label}'")
+            .query(f"participant == '{participant}'")
+            .reset_index()
+            )
+        
+        if (len(combined_plot_df) > 0):
+            # Split figure into subplots
+            fig, ax = plt.subplots(nrows=2, sharex=True, figsize=(20, 10))
+            # Plot each sensor data in a subplot
+            combined_plot_df[["acc_x", "acc_y", "acc_z"]].plot(ax=ax[0])
+            combined_plot_df[["gyr_x", "gyr_y", "gyr_z"]].plot(ax=ax[1])
+
+            # Add some styling
+            ax[0].legend(loc="upper center", bbox_to_anchor=(0.5, 1.15), ncol=3, fancybox=True, shadow=True)
+            ax[1].legend(loc="upper center", bbox_to_anchor=(0.5, 1.15), ncol=3, fancybox=True, shadow=True)
+            ax[1].set_xlabel(f"{label} {participant}")
+
+            plt.savefig(f"{real_path_to_figures}/{label.title()}-{participant}.png")
+            plt.show()
