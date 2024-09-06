@@ -17,9 +17,9 @@ pd.set_option("mode.copy_on_write", True)
 # Load data
 # --------------------------------------------------------------
 
-real_path_to_pickle = realpath("../../data/interim/01_data_processed.pkl")
+real_path_to_pickle01 = realpath("../../data/interim/01_data_processed.pkl")
 
-df = pd.read_pickle(real_path_to_pickle)
+df = pd.read_pickle(real_path_to_pickle01)
 
 # --------------------------------------------------------------
 # Plotting outliers
