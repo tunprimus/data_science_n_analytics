@@ -22,8 +22,6 @@ real_path_to_pickle02 = realpath("../../data/interim/02_outliers_removed_chauven
 
 df = pd.read_pickle(real_path_to_pickle02)
 
-df.info()
-
 df_columns = df.columns
 predictor_columns = list(df_columns[0:6])
 
@@ -37,6 +35,10 @@ plt.rcParams["lines.linewidth"] = 2
 # Dealing with missing values (imputation)
 # --------------------------------------------------------------
 
+df.info()
+
+for col in predictor_columns:
+    df[col] = df[col].interpolate()
 
 # --------------------------------------------------------------
 # Calculating set duration
