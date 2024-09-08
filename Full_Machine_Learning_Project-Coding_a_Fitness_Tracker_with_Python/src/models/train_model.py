@@ -34,6 +34,19 @@ df = pd.read_pickle(real_path_to_pickle03)
 # Create a training and test set
 # --------------------------------------------------------------
 
+df_train = df.drop(["participant", "category", "set"], axis=1)
+
+X = df_train.drop(["label"], axis=1)
+y = df_train["label"]
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=42, stratify=y)
+
+fig, ax = plt.subplots(figsize=(10, 5))
+df_train["label"].value_counts().plot(kind="bar", ax=ax, color="lightblue", label="Total")
+y_train.value_counts().plot(kind="bar", ax=ax, color="dodgerblue", label="Train")
+y_test.value_counts().plot(kind="bar", ax=ax, color="royalblue", label="Test")
+plt.legend()
+plt.show()
 
 # --------------------------------------------------------------
 # Split feature subsets
