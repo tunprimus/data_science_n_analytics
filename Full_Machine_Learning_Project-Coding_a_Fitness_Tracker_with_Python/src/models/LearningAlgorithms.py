@@ -265,12 +265,12 @@ class ClassificationAlgorithms:
     ):
         # Create the model
         if gridsearch:
-            tuned_parameters = [{"n_neighbours": [1, 2, 5, 10]}]
+            tuned_parameters = [{"n_neighbors": [1, 2, 5, 10]}]
             knn = GridSearchCV(
                 KNeighborsClassifier(), tuned_parameters, cv=5, scoring="accuracy"
             )
         else:
-            knn = KNeighborsClassifier(n_neighbors=n_neighbours)
+            knn = KNeighborsClassifier(n_neighbors=n_neighbors)
 
         # Fit the model
         knn.fit(train_X, train_y.values.ravel())
