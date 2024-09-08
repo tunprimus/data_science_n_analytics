@@ -220,6 +220,17 @@ for i, f in zip(range(len(possible_feature_sets)), feature_names):
 # Create a grouped bar plot to compare the results
 # --------------------------------------------------------------
 
+score_df.sort_values(by="accuracy", ascending=False)
+
+# Bar plot for comparison
+plt.figure(figsize=(10, 10))
+sns.barplot(x="model", y="accuracy", hue="feature_set", data=score_df)
+plt.xlabel("Model")
+plt.ylabel("Accuracy")
+plt.ylim(0.7, 1)
+plt.legend(loc="lower right")
+plt.show()
+
 
 # --------------------------------------------------------------
 # Select best model and evaluate results
