@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from DataTransformation import LowPassFilter, PrincipalComponentAnalysis
 from TemporalAbstraction import NumericalAbstraction
+from FrequencyAbstraction import FourierTransformation
 from os.path import realpath as realpath
 # Monkey patching NumPy for compatibility with newer versions
 np.float = np.float64
@@ -144,11 +145,11 @@ NumAbs = NumericalAbstraction()
 
 updated_predictor_columns = predictor_columns + ["acc_r", "gyr_r"]
 
-ws = int(1000 / 200)
+ws01 = int(1000 / 200)
 
 for col in updated_predictor_columns:
-    df_temporal = NumAbs.abstract_numerical(df_temporal, [col], ws, "mean")
-    df_temporal = NumAbs.abstract_numerical(df_temporal, [col], ws, "std")
+    df_temporal = NumAbs.abstract_numerical(df_temporal, [col], ws01, "mean")
+    df_temporal = NumAbs.abstract_numerical(df_temporal, [col], ws01, "std")
 print(df_temporal)
 print(df_temporal.sample(5))
 print(df_temporal.head(7))
@@ -158,10 +159,11 @@ df_temporal_list = []
 unique_temporal_set = df_temporal["set"].unique()
 
 for s in unique_temporal_set:
+    print(f"Applying temporal abstraction to set {s}")
     subset05 = df_temporal[df_temporal["set"] == s].copy()
     for col in updated_predictor_columns:
-        subset05 = NumAbs.abstract_numerical(subset05, [col], ws, "mean")
-        subset05 = NumAbs.abstract_numerical(subset05, [col], ws, "std")
+        subset05 = NumAbs.abstract_numerical(subset05, [col], ws01, "mean")
+        subset05 = NumAbs.abstract_numerical(subset05, [col], ws01, "std")
     df_temporal_list.append(subset05)
 
 df_temporal = pd.concat(df_temporal_list)
@@ -176,11 +178,49 @@ subset06[["gyr_y", "gyr_y_temp_mean_ws_5", "gyr_y_temp_std_ws_5"]].plot()
 # Frequency features
 # --------------------------------------------------------------
 
+df_freq = df_temporal.copy().reset_index()
+freqAbs = FourierTransformation()
+
+sampling_freq = int(1000 / 200)
+ws02 = int(2800 / 200)
+
+df_freq = freqAbs.abstract_frequency(df_freq, ["acc_y"], ws02, sampling_freq)
+print(df_freq.columns)
+
+subset07 = df_freq[df_freq["set"] == 15]
+subset07[["acc_y"]].plot()
+subset07[
+    [
+        "acc_y_max_freq",
+        "acc_y_freq_weighted",
+        "acc_y_pse",
+        "acc_y_freq_1.429_Hz_ws_14",
+        "acc_y_freq_2.5_Hz_ws_14"
+    ]
+    ].plot()
+
+# Run loop for each column
+df_freq_list = []
+unique_freq_set = df_freq["set"].unique()
+
+for s in unique_freq_set:
+    print(f"Applying Fourier transformation to set {s}")
+    subset08 = df_freq[df_freq["set"] == s].reset_index(drop=True).copy()
+    subset08 = freqAbs.abstract_frequency(subset08, updated_predictor_columns, ws02, sampling_freq)
+    df_freq_list.append(subset08)
+
+df_freq = pd.concat(df_freq_list).set_index("epoch (ms)", drop=True)
+print(df_freq.columns)
+
+
 
 # --------------------------------------------------------------
 # Dealing with overlapping windows
 # --------------------------------------------------------------
 
+df_freq = df_freq.dropna()
+
+df_freq_halved = df_freq.iloc[::2]
 
 # --------------------------------------------------------------
 # Clustering
