@@ -77,8 +77,8 @@ cutoff_freq = 1.3
 
 df_lowpass = LowPass.low_pass_filter(df_lowpass, "acc_y", sampling_freq, cutoff_freq, order=5)
 
-subset = df_lowpass[df_lowpass["set"] == 45]
-print(subset["label"][0])
+subset01 = df_lowpass[df_lowpass["set"] == 45]
+print(subset01["label"][0])
 
 # Compare original data to filtered one at cutoff_freq 1.3
 fig, ax = plt.subplots(nrows=2, sharex=True, figsize=(20, 10))
@@ -97,6 +97,27 @@ for col in predictor_columns:
 # Principal component analysis PCA
 # --------------------------------------------------------------
 
+df_pca = df_lowpass.copy()
+PCA = PrincipalComponentAnalysis()
+
+pc_values = PCA.determine_pc_explained_variance(df_pca, predictor_columns)
+
+# Elbow technique to determine optimal number of PCA components
+plt.figure(figsize=(10, 10))
+plt.plot(range(1, len(predictor_columns) + 1), pc_values)
+plt.xlabel("principal component number")
+plt.ylabel("explained variance")
+plt.show()
+
+df_pca = PCA.apply_pca(df_pca, predictor_columns, 3)
+
+subset02 = df_pca[df_pca["set"] == 35]
+print(subset02["label"][0])
+subset02[["pca_1", "pca_2", "pca_3"]].plot()
+
+subset03 = df_pca[df_pca["set"] == 23]
+print(subset03["label"][0])
+subset03[["pca_1", "pca_2", "pca_3"]].plot()
 
 # --------------------------------------------------------------
 # Sum of squares attributes
