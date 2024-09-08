@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+from sklearn.cluster import KMeans
 from DataTransformation import LowPassFilter, PrincipalComponentAnalysis
 from TemporalAbstraction import NumericalAbstraction
 from FrequencyAbstraction import FourierTransformation
@@ -226,8 +227,61 @@ df_freq_halved = df_freq.iloc[::2]
 # Clustering
 # --------------------------------------------------------------
 
+df_cluster = df_freq_halved.copy()
+
+cluster_columns = ["acc_x", "acc_y", "acc_z"]
+k_values = range(2, 10)
+inertias = []
+
+for k in k_values:
+    subset09 = df_cluster[cluster_columns]
+    kmeans = KMeans(n_clusters=k, n_init=20, random_state=42)
+    cluster_label = kmeans.fit_predict(subset09)
+    inertias.append(kmeans.inertia_)
+
+# Elbow technique to determine optimal number k
+plt.figure(figsize=(10, 10))
+plt.plot(k_values, inertias)
+plt.xlabel("k")
+plt.ylabel("Sum of squared distances")
+plt.show()
+
+kmeans = KMeans(n_clusters=5, n_init=20, random_state=42)
+subset09 = df_cluster[cluster_columns]
+df_cluster["cluster"] = kmeans.fit_predict(subset09)
+
+unique_cluster_cluster = df_cluster["cluster"].unique()
+
+# Plot clusters
+fig = plt.figure(figsize=(15, 15))
+ax = fig.add_subplot(projection="3d")
+for c in unique_cluster_cluster:
+    subset10 = df_cluster[df_cluster["cluster"] == c]
+    ax.scatter(subset10["acc_x"], subset10["acc_y"], subset10["acc_z"], label=c)
+ax.set_xlabel("X-axis")
+ax.set_ylabel("Y-axis")
+ax.set_zlabel("Z-axis")
+plt.legend()
+plt.show()
+
+unique_cluster_label = df_cluster["label"].unique()
+# Plot labels to compare
+fig = plt.figure(figsize=(15, 15))
+ax = fig.add_subplot(projection="3d")
+for label in unique_cluster_label:
+    subset11 = df_cluster[df_cluster["label"] == label]
+    ax.scatter(subset11["acc_x"], subset11["acc_y"], subset11["acc_z"], label=label)
+ax.set_xlabel("X-axis")
+ax.set_ylabel("Y-axis")
+ax.set_zlabel("Z-axis")
+plt.legend()
+plt.show()
+
 
 # --------------------------------------------------------------
 # Export dataset
 # --------------------------------------------------------------
 
+real_path_to_interim = realpath("../../data/interim")
+
+df_cluster.to_pickle(f"{real_path_to_interim}/03_data_features.pkl")
