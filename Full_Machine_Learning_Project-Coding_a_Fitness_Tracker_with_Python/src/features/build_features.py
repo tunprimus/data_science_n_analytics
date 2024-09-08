@@ -82,8 +82,8 @@ print(subset01["label"][0])
 
 # Compare original data to filtered one at cutoff_freq 1.3
 fig, ax = plt.subplots(nrows=2, sharex=True, figsize=(20, 10))
-ax[0].plot(subset["acc_y"].reset_index(drop=True), label="row data")
-ax[1].plot(subset["acc_y_lowpass"].reset_index(drop=True), label="butterworth filter")
+ax[0].plot(subset01["acc_y"].reset_index(drop=True), label="row data")
+ax[1].plot(subset01["acc_y_lowpass"].reset_index(drop=True), label="butterworth filter")
 ax[0].legend(loc="upper center", bbox_to_anchor=(0.5, 1.15), fancybox=True, shadow=True)
 ax[1].legend(loc="upper center", bbox_to_anchor=(0.5, 1.15), fancybox=True, shadow=True)
 
@@ -123,6 +123,16 @@ subset03[["pca_1", "pca_2", "pca_3"]].plot()
 # Sum of squares attributes
 # --------------------------------------------------------------
 
+df_squared = df_pca.copy()
+
+acc_r = (df_squared["acc_x"] ** 2) + (df_squared["acc_y"] ** 2) + (df_squared["acc_z"] ** 2)
+gyr_r = (df_squared["gyr_x"] ** 2) + (df_squared["gyr_y"] ** 2) + (df_squared["gyr_z"] ** 2)
+
+df_squared["acc_r"] = np.sqrt(acc_r)
+df_squared["gyr_r"] = np.sqrt(gyr_r)
+
+subset04 = df_squared[df_squared["set"] == 14]
+subset04[["acc_r", "gyr_r"]].plot(subplots=True)
 
 # --------------------------------------------------------------
 # Temporal abstraction
