@@ -138,6 +138,39 @@ subset04[["acc_r", "gyr_r"]].plot(subplots=True)
 # Temporal abstraction
 # --------------------------------------------------------------
 
+df_temporal = df_squared.copy()
+
+NumAbs = NumericalAbstraction()
+
+updated_predictor_columns = predictor_columns + ["acc_r", "gyr_r"]
+
+ws = int(1000 / 200)
+
+for col in updated_predictor_columns:
+    df_temporal = NumAbs.abstract_numerical(df_temporal, [col], ws, "mean")
+    df_temporal = NumAbs.abstract_numerical(df_temporal, [col], ws, "std")
+print(df_temporal)
+print(df_temporal.sample(5))
+print(df_temporal.head(7))
+
+# Prevent introducing data from a different exercise type
+df_temporal_list = []
+unique_temporal_set = df_temporal["set"].unique()
+
+for s in unique_temporal_set:
+    subset05 = df_temporal[df_temporal["set"] == s].copy()
+    for col in updated_predictor_columns:
+        subset05 = NumAbs.abstract_numerical(subset05, [col], ws, "mean")
+        subset05 = NumAbs.abstract_numerical(subset05, [col], ws, "std")
+    df_temporal_list.append(subset05)
+
+df_temporal = pd.concat(df_temporal_list)
+df_temporal.info()
+
+subset06 = df_temporal[df_temporal["set"] == 13]
+subset06[["acc_y", "acc_y_temp_mean_ws_5", "acc_y_temp_std_ws_5"]].plot()
+subset06[["acc_y", "acc_y_temp_mean_ws_5", "acc_y_temp_std_ws_5"]].plot(subplots=True)
+subset06[["gyr_y", "gyr_y_temp_mean_ws_5", "gyr_y_temp_std_ws_5"]].plot()
 
 # --------------------------------------------------------------
 # Frequency features
