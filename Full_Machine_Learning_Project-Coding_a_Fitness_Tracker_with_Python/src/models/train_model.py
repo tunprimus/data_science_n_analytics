@@ -68,7 +68,7 @@ print(f"Frequency features: {len(freq_features)}")
 print(f"Cluster features: {len(cluster_features)}")
 
 feature_set_01 = list(set(basic_features))
-feature_set_02 = list(set(feature_set_01 + square_features + pca_features))
+feature_set_02 = list(set(basic_features + square_features + pca_features))
 feature_set_03 = list(set(feature_set_02 + time_features))
 feature_set_04 = list(set(feature_set_03 + freq_features + cluster_features))
 
@@ -76,6 +76,32 @@ feature_set_04 = list(set(feature_set_03 + freq_features + cluster_features))
 # Perform forward feature selection using simple decision tree
 # --------------------------------------------------------------
 
+learner = ClassificationAlgorithms()
+
+max_features = 10
+
+selected_features, ordered_features, ordered_scores = learner.forward_selection(max_features, X_train, y_train)
+
+selected_features_from_forward_selection = [
+    "pca_1",
+    "duration",
+    "acc_z_freq_0.0_Hz_ws_14",
+    "acc_y_temp_mean_ws_5",
+    "gyr_y_freq_1.071_Hz_ws_14",
+    "acc_r",
+    "gyr_x_freq_2.5_Hz_ws_14",
+    "gyr_r_freq_weighted",
+    "acc_z_temp_std_ws_5",
+    "gyr_z_freq_2.5_Hz_ws_14"
+]
+
+# Elbow technique to determine optimal ordered scores
+plt.figure(figsize=(10, 5))
+plt.plot(np.arange(1, max_features + 1, 1), ordered_scores)
+plt.xlabel("Number of features")
+plt.ylabel("Accuracy")
+plt.xticks(np.arange(1, max_features + 1, 1))
+plt.show()
 
 # --------------------------------------------------------------
 # Grid search for best hyperparameters and model selection
