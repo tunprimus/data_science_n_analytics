@@ -142,6 +142,33 @@ count_reps(dead_set, cutoff=0.4)
 # Create benchmark DataFrame
 # --------------------------------------------------------------
 
+# Create a repetition column
+df["reps"] = df["category"].apply(lambda x: 5 if x == "heavy" else 10)
+
+# Create a categorised benchmark DataFrame
+rep_df = df.groupby(["label", "category", "set"])["reps"].max().reset_index()
+rep_df["reps_pred"] = 0
+
+unique_set = df["set"].unique()
+
+# Loop through the set in original DataFrame to predict repetitions
+for s in unique_set:
+    subset_01 = df[df["set"] == s]
+    column = "acc_r"
+    cutoff=0.4
+    # Change cutoff value to enhance accuracy
+    if (subset_01["label"].iloc[0] == "squat") or subset_01["label"].iloc[0] == "ohp":
+        cutoff = 0.35
+    # Change cutoff value and column to enhance accuracy
+    if subset_01["label"].iloc[0] == "row":
+        cutoff = 0.35
+        column = "gyr_x"
+    # Count the number of repetitions
+    reps = count_reps(subset_01, cutoff=cutoff, column=column)
+    # Add predicted repetitions to `reps_pred` column
+    rep_df.loc[rep_df["set"] == s, "reps_pred"] = reps
+
+print(rep_df)
 
 # --------------------------------------------------------------
 # Evaluate the results
