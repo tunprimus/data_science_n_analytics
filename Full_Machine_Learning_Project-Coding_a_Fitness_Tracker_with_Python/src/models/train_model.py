@@ -7,6 +7,7 @@ import seaborn as sns
 import itertools
 from sklearn.metrics import accuracy_score, confusion_matrix
 from os.path import realpath as realpath
+
 # Monkey patching NumPy for compatibility with version >= 1.24
 np.float = np.float64
 np.int = np.int_
@@ -14,7 +15,6 @@ np.object = np.object_
 np.bool = np.bool_
 
 pd.set_option("mode.copy_on_write", True)
-
 
 
 # Plot settings
@@ -39,10 +39,14 @@ df_train = df.drop(["participant", "category", "set"], axis=1)
 X = df_train.drop(["label"], axis=1)
 y = df_train["label"]
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=42, stratify=y)
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.25, random_state=42, stratify=y
+)
 
 fig, ax = plt.subplots(figsize=(10, 5))
-df_train["label"].value_counts().plot(kind="bar", ax=ax, color="lightblue", label="Total")
+df_train["label"].value_counts().plot(
+    kind="bar", ax=ax, color="lightblue", label="Total"
+)
 y_train.value_counts().plot(kind="bar", ax=ax, color="dodgerblue", label="Train")
 y_test.value_counts().plot(kind="bar", ax=ax, color="royalblue", label="Test")
 plt.legend()
@@ -80,7 +84,9 @@ learner = ClassificationAlgorithms()
 
 max_features = 10
 
-selected_features, ordered_features, ordered_scores = learner.forward_selection(max_features, X_train, y_train)
+selected_features, ordered_features, ordered_scores = learner.forward_selection(
+    max_features, X_train, y_train
+)
 
 selected_features_from_forward_selection = [
     "pca_1",
@@ -92,7 +98,7 @@ selected_features_from_forward_selection = [
     "gyr_x_freq_2.5_Hz_ws_14",
     "gyr_r_freq_weighted",
     "acc_z_temp_std_ws_5",
-    "gyr_z_freq_2.5_Hz_ws_14"
+    "gyr_z_freq_2.5_Hz_ws_14",
 ]
 
 # Elbow technique to determine optimal ordered scores
@@ -112,7 +118,7 @@ possible_feature_sets = [
     feature_set_02,
     feature_set_03,
     feature_set_04,
-    selected_features_from_forward_selection
+    selected_features_from_forward_selection,
 ]
 
 feature_names = [
@@ -120,7 +126,7 @@ feature_names = [
     "Feature set 2",
     "Feature set 3",
     "Feature set 4",
-    "Selected features from forward selection"
+    "Selected features from forward selection",
 ]
 
 iterations = 1
@@ -290,7 +296,9 @@ X_train = X_train.drop(["participant"], axis=1)
 X_test = X_test.drop(["participant"], axis=1)
 
 fig, ax = plt.subplots(figsize=(10, 5))
-df_train["label"].value_counts().plot(kind="bar", ax=ax, color="lightblue", label="Total")
+df_train["label"].value_counts().plot(
+    kind="bar", ax=ax, color="lightblue", label="Total"
+)
 y_train.value_counts().plot(kind="bar", ax=ax, color="dodgerblue", label="Train")
 y_test.value_counts().plot(kind="bar", ax=ax, color="royalblue", label="Test")
 plt.legend()
@@ -352,7 +360,7 @@ selected_features = [
     "gyr_y_temp_std_ws_5",
     "acc_z_freq_1.429_Hz_ws_14",
     "gyr_z_freq_1.071_Hz_ws_14",
-    "gyr_x_temp_std_ws_5"
+    "gyr_x_temp_std_ws_5",
 ]
 
 print("\tTraining neural network as 2nd best performer")
@@ -392,4 +400,3 @@ plt.ylabel("True label")
 plt.xlabel("Predicted label")
 plt.grid(False)
 plt.show()
-
