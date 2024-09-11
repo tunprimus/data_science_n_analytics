@@ -71,12 +71,28 @@ plot_df[plot_df["set"] == plot_df["set"].unique()[0]]["gyr_r"].plot()
 # Configure LowPassFilter
 # --------------------------------------------------------------
 
+# Sampling frequency
+sampling_freq = 1000 / 200
+cutoff_freq = 0.4
 
+LowPass = LowPassFilter()
+
+df = LowPass.low_pass_filter(df, "acc_y", sampling_freq, cutoff_freq, order=5)
 
 # --------------------------------------------------------------
 # Apply and tweak LowPassFilter
 # --------------------------------------------------------------
 
+bench_set = bench_df[bench_df["set"] == bench_df["set"].unique()[0]]
+squat_set = squat_df[squat_df["set"] == squat_df["set"].unique()[0]]
+row_set = row_df[row_df["set"] == row_df["set"].unique()[0]]
+ohp_set = ohp_df[ohp_df["set"] == ohp_df["set"].unique()[0]]
+dead_set = dead_df[dead_df["set"] == dead_df["set"].unique()[0]]
+
+bench_set["acc_r"].plot()
+
+column = "acc_r"
+LowPass.low_pass_filter(bench_set, column, sampling_freq, cutoff_freq, order=5)[column + "_lowpass"].plot()
 
 # --------------------------------------------------------------
 # Create function to count repetitions
@@ -84,7 +100,7 @@ plot_df[plot_df["set"] == plot_df["set"].unique()[0]]["gyr_r"].plot()
 
 
 # --------------------------------------------------------------
-# Create benchmark dataframe
+# Create benchmark DataFrame
 # --------------------------------------------------------------
 
 
