@@ -5,6 +5,7 @@ from DataTransformation import LowPassFilter
 from scipy.signal import argrelextrema
 from sklearn.metrics import mean_absolute_error
 from os.path import realpath as realpath
+
 # Monkey patching NumPy for compatibility with version >= 1.24
 np.float = np.float64
 np.int = np.int_
@@ -44,15 +45,32 @@ df["gyr_r"] = np.sqrt(gyr_r)
 # Split data
 # --------------------------------------------------------------
 
+# Create separate DataFrames for each exercise type
+bench_df = df[df["label"] == "bench"]
+squat_df = df[df["label"] == "squat"]
+row_df = df[df["label"] == "row"]
+ohp_df = df[df["label"] == "ohp"]
+dead_df = df[df["label"] == "dead"]
 
 # --------------------------------------------------------------
-# Visualize data to identify patterns
+# Visualise data to identify patterns
 # --------------------------------------------------------------
 
+plot_df = bench_df
+plot_df[plot_df["set"] == plot_df["set"].unique()[0]]["acc_x"].plot()
+plot_df[plot_df["set"] == plot_df["set"].unique()[0]]["acc_y"].plot()
+plot_df[plot_df["set"] == plot_df["set"].unique()[0]]["acc_z"].plot()
+plot_df[plot_df["set"] == plot_df["set"].unique()[0]]["acc_r"].plot()
+
+plot_df[plot_df["set"] == plot_df["set"].unique()[0]]["gyr_x"].plot()
+plot_df[plot_df["set"] == plot_df["set"].unique()[0]]["gyr_y"].plot()
+plot_df[plot_df["set"] == plot_df["set"].unique()[0]]["gyr_z"].plot()
+plot_df[plot_df["set"] == plot_df["set"].unique()[0]]["gyr_r"].plot()
 
 # --------------------------------------------------------------
 # Configure LowPassFilter
 # --------------------------------------------------------------
+
 
 
 # --------------------------------------------------------------
