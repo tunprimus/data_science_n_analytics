@@ -1,5 +1,7 @@
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
 import json
 from os.path import realpath as realpath
 
@@ -10,6 +12,11 @@ np.object = np.object_
 np.bool = np.bool_
 
 pd.set_option("mode.copy_on_write", True)
+
+FIGURE_HEIGHT = 6
+GOLDEN_RATIO = 1.618
+FIGURE_WIDTH = FIGURE_HEIGHT * GOLDEN_RATIO
+FIGURE_DPI = 72
 
 
 def column_summary(df):
@@ -255,4 +262,52 @@ def csv_to_pandas(csv_path, json_path):
     pdf = pd.read_csv(csv_path, dtype=dtypedict)
 
     return pdf
+
+
+def dataframe_preview(df):    
+    pd.set_option("display.max_rows", 500)
+    pd.set_option("display.max_columns", 500)
+    pd.set_option("display.width", 1000)
+    print(df.head())
+    print(df.describe())
+    print(df.duplicated().sum())
+
+# Identify numerical columns
+def numerical_columns_identifier(df):
+    numerical_columns = df.select_dtypes(include=[np.number]).columns
+
+    # Perform univariate analysis on numerical columns
+    for column in numerical_columns:
+        # For continuous variables
+        if len(df[column].unique()) > 10: # assuming if unique values > 10, consider it continuous
+            plt.figure(figsize=(FIGURE_WIDTH, FIGURE_HEIGHT))
+            sns.histplot(df[column], kde=True)
+            plt.title(f"Histogram of {column}")
+            plt.xlabel(column)
+            plt.ylabel("Frequency")
+            plt.show()
+        else: # For discrete or ordinal variables
+            plt.figure(figsize=(FIGURE_WIDTH, FIGURE_HEIGHT))
+            ax = sns.countplot(x=column, data=df)
+            plt.title(f"Histogram of {column}")
+            plt.xlabel(column)
+            plt.ylabel("Count")
+
+            # Annotate each bar with its count
+            for p in ax.patches:
+                ax.annotate(format(p.get_height(), ".0f"), (p.get_x() + p.get_width() / 2., p.get_height()), ha="center", va="center", xytext=(0, 5), textcoords="offset points")
+            plt.show()
+
+
+### Rename the column names for familiarity
+# This is if there is no requirement to use back the same column names.
+# This is also only done if there is no pre-existing format, or if the col names do not follow conventional format.
+# Normally will follow feature mart / dept format to name columns for easy understanding across board.
+
+def rename_columns(df):
+    df_l1 = df.copy()
+    df_l1.rename(columns=lambda x: x.lower().replace(" ", "_"), inplace=True)
+
+    return df_l1
+
 
