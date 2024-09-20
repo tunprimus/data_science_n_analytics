@@ -62,5 +62,5 @@ def column_summary(df):
             }
         )
 
-    summary_data = pd.DataFrame(summary_data)
-    return summary_data
+    summary_df = pd.DataFrame(summary_data)
+    return summary_df
