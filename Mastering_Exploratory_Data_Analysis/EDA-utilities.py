@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import json
 from os.path import realpath as realpath
 
 # Monkey patching NumPy for compatibility with version >= 1.24
@@ -145,4 +146,52 @@ def column_summary_plus(df):
         result_df = result_df.append({"col_name": column, "col_dtype": col_dtype, "num_distinct_values": num_distinct_values, "min_value": min_value, "max_value": max_value, "median_no_na": median, "average_no_na": average, "average_non_zero": average_non_zero, "null_present": null_present, "nulls_num": num_nulls, "non_nulls_num": num_non_nulls, "distinct_values": top_10_d_v_dict})
     
     return result_df
+
+
+### To Save Pandas to CSV
+def dtype_to_json(pdf, json_file_path):
+    '''
+    Parameters
+    ----------
+    pdf : pandas.DataFrame
+        pandas.DataFrame so we can extract the dtype
+    json_file_path : str
+        the json file path location
+        
+    Returns
+    -------
+    Dict
+        The dtype dictionary used
+    
+    To create a json file which stores the pandas dtype dictionary for
+    use when converting back from csv to pandas.DataFrame.
+    '''
+    dtype_dict = pdf.dtypes.apply(lambda x: str(x)).to_dict()
+
+    with open(json_file_path, "w") as json_file:
+        json.dump(dtype_dict, json_file)
+    
+    return dtype_dict
+
+def download_csv_json(df, main_path):
+    csv_path = f"{main_path}".csv
+    json_fp = f"{main_path}_dtype.json"
+    
+    dtypedict = dtype_to_json(df, json_fp)
+    df.to_csv(csv_path, index=False)
+
+    return csv_path, json_fp
+
+
+### To Load CSV to Pandas
+def json_to_dtype(json_file_path):
+    with open(json_file_path, "r") as json_file:
+        loaded_dict = json.load(json_file)
+    return loaded_dict
+
+def csv_to_pandas(csv_path, json_path):
+    dtypedict = json_to_dtype(json_path)
+    pdf = pd.read_csv(csv_path, dtype=dtypedict)
+
+    return pdf
 
