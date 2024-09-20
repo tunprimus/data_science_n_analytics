@@ -32,10 +32,15 @@ def column_summary(df):
     -------
     DataFrame
         A DataFrame containing the summary of the given DataFrame.
+    Example
+    -------
+    summary_df = column_summary(df)
+    print(summary_df)
     """
     summary_data = []
 
-    for col_name in df.columns:
+    df_columns = df.columns
+    for col_name in df_columns:
         col_dtype = df[col_name].dtype
         num_of_nulls = df[col_name].isnull().sum()
         num_of_nun_nulls = df[col_name].notnull.sum()
@@ -90,6 +95,11 @@ def column_summary_plus(df):
     -------
     DataFrame
         A DataFrame containing the summary of the given DataFrame.
+    
+    Example
+    -------
+    summary_df = column_summary_plus(df)
+    print(summary_df)
     """
     result_df = pd.DataFrame(columns=["col_name", "col_dtype", "num_of_distinct_values", "min_value", "max_value", "median_no_na", "average_no_na", "average_non_zero", "null_present", "nulls_num", "non_nulls_num",  "distinct_values"])
 
@@ -165,6 +175,9 @@ def dtype_to_json(pdf, json_file_path):
     
     To create a json file which stores the pandas dtype dictionary for
     use when converting back from csv to pandas.DataFrame.
+    Example
+    -------
+    download_csv_json(df, "/home/some_dir/file_1")
     '''
     dtype_dict = pdf.dtypes.apply(lambda x: str(x)).to_dict()
 
@@ -174,6 +187,24 @@ def dtype_to_json(pdf, json_file_path):
     return dtype_dict
 
 def download_csv_json(df, main_path):
+    '''
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        pandas.DataFrame to be saved to csv
+    main_path : str
+        the path to the csv file to be saved
+        
+    Returns
+    -------
+    Tuple
+        (csv_path, json_fp)
+    
+    Save a pandas.DataFrame to csv and json file path.
+    The csv file will be saved with the name given in main_path.
+    The json file will be saved with the name given in main_path with "_dtype" added to the end.
+    The json file will contain the dtype information of the pandas.DataFrame.
+    '''
     csv_path = f"{main_path}".csv
     json_fp = f"{main_path}_dtype.json"
     
@@ -185,11 +216,41 @@ def download_csv_json(df, main_path):
 
 ### To Load CSV to Pandas
 def json_to_dtype(json_file_path):
+    '''
+    Parameters
+    ----------
+    json_file_path : str
+        the path to the json file which stores the pandas dtype dictionary
+
+    Returns
+    -------
+    dict
+        the pandas dtype dictionary loaded from the json file
+    '''
     with open(json_file_path, "r") as json_file:
         loaded_dict = json.load(json_file)
     return loaded_dict
 
 def csv_to_pandas(csv_path, json_path):
+    '''
+    Parameters
+    ----------
+    csv_path : str
+        the path to the csv file which stores the pandas.DataFrame
+    json_path : str
+        the path to the json file which stores the pandas dtype dictionary
+        
+    Returns
+    -------
+    pandas.DataFrame
+        the pandas.DataFrame loaded from the csv file with dtype loaded from the json file
+    
+    Example
+    -------
+    csvfp = "/home/some_dir/file_1.csv"
+    jsonfp = "/home/some_dir/file_1_dtype.json"
+    df = csv_to_pandas(csvfp, jsonfp)
+    '''
     dtypedict = json_to_dtype(json_path)
     pdf = pd.read_csv(csv_path, dtype=dtypedict)
 
