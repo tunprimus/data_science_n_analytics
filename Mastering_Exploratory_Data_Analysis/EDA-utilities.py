@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import json
 from os.path import realpath as realpath
-from scipy.special.agm import agm
+from scipy.special.agm import agm as agm
 
 # Monkey patching NumPy for compatibility with version >= 1.24
 np.float = np.float64
@@ -335,3 +335,13 @@ def explore_nulls_nans(df):
     plt.tight_layout()  # adjust layout to prevent clipping of labels
     plt.show()
 
+
+def selective_fill_nans(df):
+    numerical_columns = df.select_dtypes(include=[np.number]).columns
+
+    try:
+        for i in numerical_columns[df.isnull().any(axis=0)]:
+            df[i].fillna(df[i].agm(), inplace=True)
+    except ValueError:
+        for i in df.columns[df.isnull().any(axis=0)]:
+            df[i].fillna(df[i].agm(), inplace=True)
