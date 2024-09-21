@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import json
 from os.path import realpath as realpath
+from scipy.special.agm import agm
 
 # Monkey patching NumPy for compatibility with version >= 1.24
 np.float = np.float64
@@ -310,4 +311,27 @@ def rename_columns(df):
 
     return df_l1
 
+
+def explore_nulls_nans(df):
+    df_l1 = df.copy()
+    sns.set(style="whitegrid")
+
+    # Create strip plot
+    sns.stripplot(data=df_l1, x=None, y=None, hue=None, order=None, hue_order=None, jitter=True, dodge=False, orient=None, color=None, palette=None, size=5, edgecolor="matplotlib color", linewidth=0, hue_norm=None, log_scale=None, native_scale=False, formatter=None, legend="auto", ax=None)
+
+    # Create violin plot
+    sns.violinplot(data=df_l1, x=None, y=None, hue=None, order=None, hue_order=None, orient=None, color=None, palette=None, saturation=0.75, fill=True, inner="box", split=False, width=0.8, dodge="auto", gap=0, linewidth=None, linecolor="auto", cut=2, gridsize=100, bw_method="scott", bw_adjust=1, density_norm="area", common_norm=False, hue_norm=None, formatter=None, log_scale=None, native_scale=False, legend="auto", inner_kws=None, ax=None)
+
+    # Create boxplot
+    plt.figure(figsize=(FIGURE_WIDTH, FIGURE_HEIGHT))
+    sns.boxplot(x="x", y="y", data=df_l1)
+    # Set labels and title
+    plt.xlabel("{x}")
+    plt.ylabel("{y}")
+    plt.title("Boxplot of y by x")
+    plt.yscale("log")
+    # Show the plot
+    plt.xticks(rotation=45)  # rotate x-axis labels for better readability
+    plt.tight_layout()  # adjust layout to prevent clipping of labels
+    plt.show()
 
