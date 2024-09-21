@@ -19,6 +19,36 @@ GOLDEN_RATIO = 1.618
 FIGURE_WIDTH = FIGURE_HEIGHT * GOLDEN_RATIO
 FIGURE_DPI = 72
 
+"""
+Exploratory Data Analysis (EDA) typically consists of several key components or stages that guide data scientists through the process of understanding and exploring a dataset. These components can vary depending on the specific goals of the analysis and the characteristics of the data, but commonly include:
+
+1) Data collection
+2) Data cleaning and preprocessing
+3) Descriptive statistics
+4) Univariate analysis
+5) Bivariate analysis
+6) Multivariate analysis
+7) Feature engineering
+8) Visualisation
+
+EDA_L1: Pure Understanding of Original Data
+Basic check on the column datatype, null counts, distinct values and top 10 counts
+
+EDA_L2: Transformation of Original Data
+i. Change column names to all be in small letters and spaces to underscore.
+ii. Fill in the empty null / NaN rows with reasonable values; after visualisation
+iii. Change the datatype of each column to more appropriate ones.
+iv. Do data validation 
+v. Mapping / binning of categorical features
+
+EDA_L3: Understanding of Transformed Data
+i. Correlation analysis
+ii. IV / WOE Values
+iii. Feature importance from models
+iv. Statistical tests
+v. Further data analysis on imputed data
+
+"""
 
 def column_summary(df):
     """
@@ -316,24 +346,27 @@ def explore_nulls_nans(df):
     df_l1 = df.copy()
     sns.set(style="whitegrid")
 
-    # Create strip plot
-    sns.stripplot(data=df_l1, x=None, y=None, hue=None, order=None, hue_order=None, jitter=True, dodge=False, orient=None, color=None, palette=None, size=5, edgecolor="matplotlib color", linewidth=0, hue_norm=None, log_scale=None, native_scale=False, formatter=None, legend="auto", ax=None)
+    categorical_columns = df_l1.select_dtypes(exclude=[np.number]).columns
+    
+    for col in categorical_columns:
+        # Create strip plot
+        sns.stripplot(data=df_l1, x=col, y=None, hue=None, order=None, hue_order=None, jitter=True, dodge=False, orient=None, color=None, palette=None, size=5, edgecolor="matplotlib color", linewidth=0, hue_norm=None, log_scale=None, native_scale=False, formatter=None, legend="auto", ax=None)
 
-    # Create violin plot
-    sns.violinplot(data=df_l1, x=None, y=None, hue=None, order=None, hue_order=None, orient=None, color=None, palette=None, saturation=0.75, fill=True, inner="box", split=False, width=0.8, dodge="auto", gap=0, linewidth=None, linecolor="auto", cut=2, gridsize=100, bw_method="scott", bw_adjust=1, density_norm="area", common_norm=False, hue_norm=None, formatter=None, log_scale=None, native_scale=False, legend="auto", inner_kws=None, ax=None)
+        # Create violin plot
+        sns.violinplot(data=df_l1, x=col, y=None, hue=None, order=None, hue_order=None, orient=None, color=None, palette=None, saturation=0.75, fill=True, inner="box", split=False, width=0.8, dodge="auto", gap=0, linewidth=None, linecolor="auto", cut=2, gridsize=100, bw_method="scott", bw_adjust=1, density_norm="area", common_norm=False, hue_norm=None, formatter=None, log_scale=None, native_scale=False, legend="auto", inner_kws=None, ax=None)
 
-    # Create boxplot
-    plt.figure(figsize=(FIGURE_WIDTH, FIGURE_HEIGHT))
-    sns.boxplot(x="x", y="y", data=df_l1)
-    # Set labels and title
-    plt.xlabel("{x}")
-    plt.ylabel("{y}")
-    plt.title("Boxplot of y by x")
-    plt.yscale("log")
-    # Show the plot
-    plt.xticks(rotation=45)  # rotate x-axis labels for better readability
-    plt.tight_layout()  # adjust layout to prevent clipping of labels
-    plt.show()
+        # Create boxplot
+        plt.figure(figsize=(FIGURE_WIDTH, FIGURE_HEIGHT))
+        sns.boxplot(x=col, y="y", data=df_l1)
+        # Set labels and title
+        plt.xlabel(f"{col}")
+        plt.ylabel("{y}")
+        plt.title(f"Boxplot of y by {col}")
+        plt.yscale("log")
+        # Show the plot
+        plt.xticks(rotation=45)  # rotate x-axis labels for better readability
+        plt.tight_layout()  # adjust layout to prevent clipping of labels
+        plt.show()
 
 
 def selective_fill_nans(df):
@@ -345,3 +378,24 @@ def selective_fill_nans(df):
     except ValueError:
         for i in df.columns[df.isnull().any(axis=0)]:
             df[i].fillna(df[i].agm(), inplace=True)
+
+
+def explore_correlation(df):
+    numerical_columns = df.select_dtypes(include=[np.number]).columns
+
+    correlation_matrix = df[numerical_columns].corr()
+
+    # Create the heatmap
+    plt.figure(figsize=(FIGURE_WIDTH, FIGURE_HEIGHT))
+    sns.heatmap(correlation_matrix, annot=True, cmap="coolwarm", fmt=".2f")
+    # Set title
+    plt.title("Correlation Heatmap")
+    # Show the plot
+    plt.tight_layout()
+    plt.show()
+
+    # Find the max correlation
+    upper_triangular = correlation_matrix.where(np.triu(np.ones(correlation_matrix.shape), k=1).astype(bool))
+    max_correlation = upper_triangular.max().max()
+    print(f"Maximum pairwise correlation: {max_correlation:.2f}")
+
