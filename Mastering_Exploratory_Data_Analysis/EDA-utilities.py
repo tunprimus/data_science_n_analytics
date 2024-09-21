@@ -347,7 +347,7 @@ def explore_nulls_nans(df):
     sns.set(style="whitegrid")
 
     categorical_columns = df_l1.select_dtypes(exclude=[np.number]).columns
-    
+
     for col in categorical_columns:
         # Create strip plot
         sns.stripplot(data=df_l1, x=col, y=None, hue=None, order=None, hue_order=None, jitter=True, dodge=False, orient=None, color=None, palette=None, size=5, edgecolor="matplotlib color", linewidth=0, hue_norm=None, log_scale=None, native_scale=False, formatter=None, legend="auto", ax=None)
@@ -399,3 +399,12 @@ def explore_correlation(df):
     max_correlation = upper_triangular.max().max()
     print(f"Maximum pairwise correlation: {max_correlation:.2f}")
 
+def display_pairwise_correlation(df_input, col_1, col_2):
+    numerical_columns = df_input.select_dtypes(include=[np.number]).columns
+
+    for index, _ in enumerate(numerical_columns):
+        col_1 = numerical_columns[index]
+        col_2 = numerical_columns[index - 1] if index > 1 else None
+
+        correlation_value = df_input[col_1].corr(df_input[col_2])
+        return f"Correlation value between {col_1} and {col_2} is: {correlation_value}"
