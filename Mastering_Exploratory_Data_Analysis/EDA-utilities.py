@@ -3,8 +3,15 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import json
+import xgboost as xgb
 from os.path import realpath as realpath
 from scipy.special.agm import agm as agm
+from scipy.stats import ttest_ind
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.compose import ColumnTransformer
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestClassifier
 
 # Monkey patching NumPy for compatibility with version >= 1.24
 np.float = np.float64
@@ -43,7 +50,13 @@ v. Mapping / binning of categorical features
 
 EDA_L3: Understanding of Transformed Data
 i. Correlation analysis
-ii. IV / WOE Values
+ii. Information value (IV; quantifies the prediction power of a feature) / WOE Values
+    - look for IV of 0.1 to 0.5
+        < 0.02      ---> useless for prediction
+        0.02 - 0.1  ---> weak predictor
+        0.1 - 0.3   ---> medium predictor
+        0.3 - 0.5   ---> strong predictor
+        > 0.5       ---> suspicious or too good to be true
 iii. Feature importance from models
 iv. Statistical tests
 v. Further data analysis on imputed data
@@ -408,3 +421,49 @@ def display_pairwise_correlation(df_input, col_1, col_2):
 
         correlation_value = df_input[col_1].corr(df_input[col_2])
         return f"Correlation value between {col_1} and {col_2} is: {correlation_value}"
+
+
+def iv_woe(data, target, bins=10, show_woe=False):
+    # Create empty DataFrames
+    new_df, woe_df = pd.DataFrame(), pd.DataFrame()
+
+    # Extract column names
+    cols = data.columns
+
+    # Run WOE and IV on all the independent variables
+    for i_vars in cols[~cols.isin([target])]:
+        print("Processing variable:", i_vars)
+        if (data[i_vars].dtype.kind in "bifc") and (len(np.unique(data[i_vars])) > 10):
+            binned_x = pd.qcut(data[i_vars], bins, duplicates="drop")
+            buffer_df = pd.DataFrame({"x": binned_x, "y": data[target]})
+        else:
+            buffer_df = pd.DataFrame({"x": data[i_vars], "y": data[target]})
+        
+        # Calculate the number of events in each group (bin)
+        evt = buffer_df.groupby("x", as_index=False).agg({"y": ["count", "sum"]})
+        evt.columns = ["Cutoff", "N", "Events"]
+
+        # Calculate the % of events in each group
+        evt["%_of_Events"] = np.maximum(evt["Events"], 0.5) / evt["Events"].sum()
+
+        # Calculate the non-events in each group
+        evt["Non-Events"] = evt["N"] - evt["Events"]
+        # Calculate the % of non-events in each group
+        evt["%_of_Non-Events"] = np.maximum(evt["Non-Events"], 0.5) / evt["Non-Events"].sum()
+
+        # Calculate WOE by taking natural log of division of % of non-events and % of events
+        evt["WoE"] = np.log(evt["%_of_Events"] / evt["%_of_Non-Events"])
+        evt["IV"] = evt["WoE"] * (evt["%_of_Events"] - evt["%_of_Non-Events"])
+        evt.insert(loc=0, column="Variable", value=i_vars)
+        print("Information value of " + i_vars + " is " + str(round(evt["IV"].sum(), 6)))
+        temp = pd.DataFrame({"Variable": [i_vars], "IV": [evt["IV"].sum()]}, columns=["Variable", "IV"])
+        new_df = pd.concat([new_df, temp], axis=0)
+        woe_df = pd.concat([woe_df, evt], axis=0)
+
+        # Shoe WOE table
+        if show_woe is True:
+            print(evt)
+    return new_df, woe_df
+
+
+
