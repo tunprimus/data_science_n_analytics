@@ -466,4 +466,16 @@ def iv_woe(data, target, bins=10, show_woe=False):
     return new_df, woe_df
 
 
+def columns_partitioner(df, all_col=False):
+    buffer_df = df.copy()
+    numerical_columns = buffer_df.select_dtypes(include=[np.number]).columns
+    categorical_columns = buffer_df.select_dtypes(exclude=[np.number]).columns
+    dependent_column = ["target_encoded"]
+    independent_column = numerical_columns + categorical_columns
+    all_columns = numerical_columns + categorical_columns + dependent_column
+
+    if all_col is True:
+        return independent_column, dependent_column, all_columns
+    else:
+        return independent_column, dependent_column
 
