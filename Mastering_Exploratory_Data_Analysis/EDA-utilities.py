@@ -312,6 +312,17 @@ def csv_to_pandas(csv_path, json_path):
 
 
 def dataframe_preview(df):    
+    '''
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        pandas.DataFrame to be previewed
+        
+    Returns
+    -------
+    None
+        This function prints out the preview of the given pandas.DataFrame.
+    '''
     pd.set_option("display.max_rows", 500)
     pd.set_option("display.max_columns", 500)
     pd.set_option("display.width", 1000)
@@ -321,6 +332,21 @@ def dataframe_preview(df):
 
 # Identify numerical columns
 def numerical_columns_identifier(df):
+    '''
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        The pandas.DataFrame to identify its numerical columns and perform univariate analysis on them.
+
+    Returns
+    -------
+    None
+        This function does not return anything, but it prints out the histogram of each numerical columns in the given pandas.DataFrame.
+
+    Notes
+    -----
+    We consider a column as continuous if it has more than 10 unique values.
+    '''
     numerical_columns = df.select_dtypes(include=[np.number]).columns
 
     # Perform univariate analysis on numerical columns
@@ -350,8 +376,18 @@ def numerical_columns_identifier(df):
 # This is if there is no requirement to use back the same column names.
 # This is also only done if there is no pre-existing format, or if the col names do not follow conventional format.
 # Normally will follow feature mart / dept format to name columns for easy understanding across board.
-
 def rename_columns(df):
+    '''
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        The pandas.DataFrame to be processed
+
+    Returns
+    -------
+    df_l1 : pandas.DataFrame
+        The pandas.DataFrame with its column names lower cased and spaces replaced with underscores.
+    '''
     df_l1 = df.copy()
     df_l1.rename(columns=lambda x: x.lower().replace(" ", "_"), inplace=True)
 
@@ -359,6 +395,23 @@ def rename_columns(df):
 
 
 def explore_nulls_nans(df):
+    """
+    Explore nulls and nans in the given DataFrame.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        The DataFrame to be processed
+
+    Returns
+    -------
+    None
+
+    Notes
+    -----
+    This function will create a strip plot, violin plot and boxplot for each categorical column in the given DataFrame.
+    It will show the distribution of each categorical column.
+    """
     df_l1 = df.copy()
     sns.set(style="whitegrid")
 
@@ -386,6 +439,23 @@ def explore_nulls_nans(df):
 
 
 def selective_fill_nans(df):
+    """
+    Fill NaN values in a DataFrame selectively.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        The DataFrame to be processed
+
+    Returns
+    -------
+    None
+
+    Notes
+    -----
+    This function will fill NaN values in numerical columns with the AGM (Arithmetic Geometric Mean) of the respective column.
+    If non-numerical columns contain NaN values, they will be filled with the AGM of the entire DataFrame.
+    """
     numerical_columns = df.select_dtypes(include=[np.number]).columns
 
     try:
@@ -397,6 +467,22 @@ def selective_fill_nans(df):
 
 
 def explore_correlation(df):
+    """
+    Explore the correlation between numerical columns of a DataFrame.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        The DataFrame to be processed
+
+    Returns
+    -------
+    None
+
+    Notes
+    -----
+    This function will show a heatmap of the correlation between numerical columns and print the maximum pairwise correlation.
+    """
     numerical_columns = df.select_dtypes(include=[np.number]).columns
 
     correlation_matrix = df[numerical_columns].corr()
@@ -416,6 +502,23 @@ def explore_correlation(df):
     print(f"Maximum pairwise correlation: {max_correlation:.2f}")
 
 def display_pairwise_correlation(df_input, col_1, col_2):
+    """
+    Displays the pairwise correlation between two columns in a given DataFrame.
+
+    Parameters
+    ----------
+    df_input : pandas.DataFrame
+        The DataFrame to be processed
+    col_1 : str
+        The first column of the pair
+    col_2 : str
+        The second column of the pair
+
+    Returns
+    -------
+    str
+        A string containing the correlation value between the two columns
+    """
     numerical_columns = df_input.select_dtypes(include=[np.number]).columns
 
     for index, _ in enumerate(numerical_columns):
@@ -427,6 +530,27 @@ def display_pairwise_correlation(df_input, col_1, col_2):
 
 
 def iv_woe(data, target, bins=10, show_woe=False):
+    """
+    Calculate the Weight of Evidence (WOE) and Information Value (IV) for a given DataFrame.
+
+    Parameters
+    ----------
+    data : pandas.DataFrame
+        The DataFrame to be processed
+    target : str
+        The target variable to be used
+    bins : int, optional
+        The number of bins to use for numerical variables, defaults to 10
+    show_woe : bool, optional
+        Whether to show the WOE table, defaults to False
+
+    Returns
+    -------
+    pandas.DataFrame
+        A DataFrame with the IV of each column
+    pandas.DataFrame
+        A DataFrame with the WOE of each column
+    """
     # Create empty DataFrames
     new_df, woe_df = pd.DataFrame(), pd.DataFrame()
 
@@ -470,6 +594,24 @@ def iv_woe(data, target, bins=10, show_woe=False):
 
 
 def column_categoriser(df, all_col=False):
+    """
+    Categorise the columns of a DataFrame into numerical, categorical and dependent columns.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        The DataFrame to be processed
+    all_col : bool, optional
+        Whether to return all columns or not, defaults to False
+
+    Returns
+    -------
+    tuple
+        A tuple of 3 or 4 elements. The first element is the list of numerical columns,
+        the second element is the list of independent columns, the third element is the
+        list of dependent columns and the fourth element is the list of all columns if
+        all_col is True.
+    """
     buffer_df = df.copy()
     numerical_columns = buffer_df.select_dtypes(include=[np.number]).columns
     categorical_columns = buffer_df.select_dtypes(exclude=[np.number]).columns
@@ -484,6 +626,20 @@ def column_categoriser(df, all_col=False):
 
 
 def model_data_partitioner(df):
+    """
+    Partitions the data into training and test data.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        The DataFrame to be processed
+
+    Returns
+    -------
+    tuple
+        A tuple of 4 elements. The first element is the training data, the second element is the test data,
+        the third element is the training labels and the fourth element is the test labels.
+    """
     buffer_df = df.copy()
     _, independent_col, dependent_col = column_categoriser(buffer_df, all_col=False)
 
@@ -494,6 +650,19 @@ def model_data_partitioner(df):
 
 
 def model_data_preprocessor_full_return(df):
+    """
+    Processes the data for a machine learning model by splitting it into train and test sets, scaling the numerical columns and transforming the labels.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        The DataFrame to be processed
+
+    Returns
+    -------
+    tuple
+        A tuple of 10 elements. The first 4 elements are the original train and test data and labels, the next 4 elements are the scaled train and test data and labels, and the last 2 elements are the scaled train and test data as DataFrames.
+    """
     buffer_df = df.copy()
     numerical_cols, independent_col, dependent_col = column_categoriser(buffer_df, all_col=False)
 
@@ -514,6 +683,29 @@ def model_data_preprocessor_full_return(df):
 
 # Function for getting feature importance sorted
 def feature_importance_sorted(classification_model_input, X_train, y_train, feature_importance_input=None):
+    """
+    Takes in a classification model, training data and labels, and returns a DataFrame with each feature and its importance in the model, sorted in descending order.
+    
+    If a classification model is provided, it fits the model to the training data and labels, and then gets the feature importances. If a feature_importance_input is provided, it uses that instead.
+    
+    The returned DataFrame also includes a "rank" column, which is the rank of each feature in terms of its importance in the model.
+    
+    Parameters
+    ----------
+    classification_model_input : sklearn classifier
+        The classification model to be used
+    X_train : pandas.DataFrame
+        The training data
+    y_train : pandas.Series
+        The training labels
+    feature_importance_input : list
+        The feature importances to be used (if not using a classification model)
+    
+    Returns
+    -------
+    pandas.DataFrame
+        The DataFrame with each feature and its importance, sorted in descending order
+    """
     if classification_model_input is not None:
         some_model = classification_model_input
         some_model.fit(X_train, y_train)
@@ -531,6 +723,22 @@ def feature_importance_sorted(classification_model_input, X_train, y_train, feat
 
 
 def get_feature_importance(df):
+    """
+    Takes in a DataFrame and returns a DataFrame with feature importances from
+    multiple models. The models used are DecisionTreeClassifier, RandomForestClassifier,
+    XGBClassifier, and LogisticRegression. The feature importances are ranked and
+    the ranks are also included in the returned DataFrame.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        The DataFrame to be processed
+
+    Returns
+    -------
+    pandas.DataFrame
+        The DataFrame with feature importances and ranks from multiple models
+    """
     buffer = model_data_partitioner(df)
     X_train, y_train = buffer[0], buffer[2]
 
@@ -562,6 +770,25 @@ def get_feature_importance(df):
 
 def individual_t_test(df_1, df_2, list_of_features, alpha_value):
     # For continuous variable individual t-tests
+    """
+    Function to perform individual t-tests on given features between two DataFrames.
+
+    Parameters
+    ----------
+    df_1 : pandas.DataFrame
+        The first DataFrame
+    df_2 : pandas.DataFrame
+        The second DataFrame
+    list_of_features : list
+        List of features to be tested
+    alpha_value : float
+        The significance level for rejecting the null hypothesis
+
+    Returns
+    -------
+    pandas.DataFrame
+        A DataFrame with the results of the t-tests, including the feature, t-statistic, p-value, and significance
+    """
     new_list = []
     for feature in list_of_features:
         feat_1 = df_1[feature]
