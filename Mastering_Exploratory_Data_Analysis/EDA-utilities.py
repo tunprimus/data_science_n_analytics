@@ -559,3 +559,25 @@ def get_feature_importance(df):
 
     return merged_df
 
+
+def individual_t_test(df_1, df_2, list_of_features, alpha_value):
+    # For continuous variable individual t-tests
+    new_list = []
+    for feature in list_of_features:
+        feat_1 = df_1[feature]
+        feat_2 = df_2[feature]
+
+        t_stat, p_val = ttest_ind(feat_1, feat_2, equal_var=False)
+        t_stat_1 = f"{t_stat:.3f}"
+        p_val_1 = f"{p_val:.3f}"
+
+        if p_val < alpha_value:
+            sig = "Significant"
+        else:
+            sig = "Insignificant"
+        
+        new_dict = {"feature": feature, "t_stat": t_stat_1, "p_value": p_val_1, "significance": sig}
+        new_list.append(new_dict)
+    
+    df_result = pd.DataFrame(new_list)
+    return df_result
