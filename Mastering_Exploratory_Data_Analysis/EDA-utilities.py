@@ -12,6 +12,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.compose import ColumnTransformer
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
 
 # Monkey patching NumPy for compatibility with version >= 1.24
 np.float = np.float64
@@ -26,7 +27,7 @@ GOLDEN_RATIO = 1.618
 FIGURE_WIDTH = FIGURE_HEIGHT * GOLDEN_RATIO
 FIGURE_DPI = 72
 TEST_SIZE = 0.19
-RANDOM_SEED = 42
+RANDOM_STATE = 42
 
 """
 Exploratory Data Analysis (EDA) typically consists of several key components or stages that guide data scientists through the process of understanding and exploring a dataset. These components can vary depending on the specific goals of the analysis and the characteristics of the data, but commonly include:
@@ -482,12 +483,22 @@ def column_categoriser(df, all_col=False):
         return numerical_columns, independent_column, dependent_column
 
 
-def model_data_preprocessor(df):
+def model_data_partitioner(df):
+    buffer_df = df.copy()
+    _, independent_col, dependent_col = column_categoriser(buffer_df, all_col=False)
+
+    X_train, X_test, y_train, y_test = train_test_split(buffer_df[independent_col], buffer_df[dependent_col],\
+                                                    stratify=buffer_df[dependent_col], test_size=TEST_SIZE, random_state=RANDOM_STATE)
+
+    return (X_train, X_test, y_train, y_test)
+
+
+def model_data_preprocessor_full_return(df):
     buffer_df = df.copy()
     numerical_cols, independent_col, dependent_col = column_categoriser(buffer_df, all_col=False)
 
     X_train, X_test, y_train, y_test = train_test_split(buffer_df[independent_col], buffer_df[dependent_col],\
-                                                    stratify=buffer_df[dependent_col], test_size=TEST_SIZE, random_state=RANDOM_SEED)
+                                                    stratify=buffer_df[dependent_col], test_size=TEST_SIZE, random_state=RANDOM_STATE)
     preprocessor = ColumnTransformer(\
         transformers=[("num", StandardScaler(), numerical_cols)]
         )
@@ -518,4 +529,33 @@ def feature_importance_sorted(classification_model_input, X_train, y_train, feat
     df_feature_importances["rank"] = range(1, len(df_feature_importances) + 1)
     return df_feature_importances
 
+
+def get_feature_importance(df):
+    buffer = model_data_partitioner(df)
+    X_train, y_train = buffer[0], buffer[2]
+
+    # Decision Tree Classifier feature importance
+    dtc_fi = feature_importance_sorted(DecisionTreeClassifier(), X_train, y_train)
+
+    # Random Forest Classifier feature importance
+    rfc_fi = feature_importance_sorted(RandomForestClassifier(), X_train, y_train.values.ravel())
+
+    # XGB feature importance
+    xgb_fi = feature_importance_sorted(xgb.XGBClassifier(), X_train, y_train)
+
+    # Logistic Regression
+    lr = LogisticRegression(max_iter=10000)
+    lr.fit(X_train, y_train.values.ravel())
+    feature_importances = lr.coef_[0]  # assuming binary classification
+    lr_fi = feature_importance_sorted(None, X_train, y_train.values.ravel(), feature_importances)
+
+    # Rank the feature importance
+    dtc_fi = dtc_fi.rename(columns={"Importance": "imp_dtc", "rank": "rank_dtc"})
+    rfc_fi = rfc_fi.rename(columns={"Importance": "imp_rfc", "rank": "rank_rfc"})
+    xgb_fi = xgb_fi.rename(columns={"Importance": "imp_xgb", "rank": "rank_xgb"})
+    lr_fi = lr_fi.rename(columns={"Importance": "imp_lr", "rank": "rank_lr"})
+
+    merged_df = dtc_fi.merge(rfc_fi, on="Feature", how="left").merge(xgb_fi, on="Feature", how="left").merge(lr_fi, on="Feature", how="left")
+
+    return merged_df
 
