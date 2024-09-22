@@ -501,5 +501,21 @@ def model_data_preprocessor(df):
     return (X_train, X_test, y_train, y_test, X_train_transformed, X_test_transformed, y_train_transformed, y_test_transformed, X_train_transformed_df, X_test_transformed_df)
 
 
+# Function for getting feature importance sorted
+def feature_importance_sorted(classification_model_input, X_train, y_train, feature_importance_input=None):
+    if classification_model_input is not None:
+        some_model = classification_model_input
+        some_model.fit(X_train, y_train)
+        feature_importances = some_model.feature_importances_
+    else:
+        feature_importances = feature_importance_input
+    
+    feature_importances_sorted = sorted(zip(X_train.columns, feature_importances), key=lambda x: x[1], reverse=True)
+    df_feature_importances = pd.DataFrame(feature_importances_sorted, columns=["Feature", "Importance"])
+    for feature_name, importance in feature_importances_sorted:
+        print(f"Feature {feature_name}: {importance}")
+    
+    df_feature_importances["rank"] = range(1, len(df_feature_importances) + 1)
+    return df_feature_importances
 
 
