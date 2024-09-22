@@ -25,6 +25,8 @@ FIGURE_HEIGHT = 6
 GOLDEN_RATIO = 1.618
 FIGURE_WIDTH = FIGURE_HEIGHT * GOLDEN_RATIO
 FIGURE_DPI = 72
+TEST_SIZE = 0.19
+RANDOM_SEED = 42
 
 """
 Exploratory Data Analysis (EDA) typically consists of several key components or stages that guide data scientists through the process of understanding and exploring a dataset. These components can vary depending on the specific goals of the analysis and the characteristics of the data, but commonly include:
@@ -466,7 +468,7 @@ def iv_woe(data, target, bins=10, show_woe=False):
     return new_df, woe_df
 
 
-def columns_partitioner(df, all_col=False):
+def column_categoriser(df, all_col=False):
     buffer_df = df.copy()
     numerical_columns = buffer_df.select_dtypes(include=[np.number]).columns
     categorical_columns = buffer_df.select_dtypes(exclude=[np.number]).columns
@@ -475,7 +477,29 @@ def columns_partitioner(df, all_col=False):
     all_columns = numerical_columns + categorical_columns + dependent_column
 
     if all_col is True:
-        return independent_column, dependent_column, all_columns
+        return numerical_columns, independent_column, dependent_column, all_columns
     else:
-        return independent_column, dependent_column
+        return numerical_columns, independent_column, dependent_column
+
+
+def model_data_preprocessor(df):
+    buffer_df = df.copy()
+    numerical_cols, independent_col, dependent_col = column_categoriser(buffer_df, all_col=False)
+
+    X_train, X_test, y_train, y_test = train_test_split(buffer_df[independent_col], buffer_df[dependent_col],\
+                                                    stratify=buffer_df[dependent_col], test_size=TEST_SIZE, random_state=RANDOM_SEED)
+    preprocessor = ColumnTransformer(\
+        transformers=[("num", StandardScaler(), numerical_cols)]
+        )
+    X_train_transformed = preprocessor.fit_transform(X_train)
+    X_train_transformed_df = pd.DataFrame(X_train_transformed, columns=independent_col)
+    X_test_transformed = preprocessor.fit_transform(X_test)
+    X_test_transformed_df = pd.DataFrame(X_test_transformed, columns=independent_col)
+    y_train_transformed = y_train.values.ravel()
+    y_test_transformed = y_test.values.ravel()
+
+    return (X_train, X_test, y_train, y_test, X_train_transformed, X_test_transformed, y_train_transformed, y_test_transformed, X_train_transformed_df, X_test_transformed_df)
+
+
+
 
