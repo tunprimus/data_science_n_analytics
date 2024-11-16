@@ -1,0 +1,47 @@
+{
+    "david": {
+        "age": 15,
+        "city": "london",
+        "salary": 50000
+    },
+    "guillaume": {
+        "age": 24,
+        "city": "paris",
+        "salary": 80000
+    },
+    "mark": {
+        "age": 46,
+        "city": "berlin",
+        "salary": 30000
+    },
+    "jennifer": {
+        "age": 29,
+        "city": "paris",
+        "salary": 65000
+    },
+    "gulin": {
+        "age": 42,
+        "city": "istanbul",
+        "salary": 100000
+    },
+    "kimberley": {
+        "age": 25,
+        "city": "new york",
+        "salary": 20000
+    },
+    "michael": {
+        "age": 31,
+        "city": "stockholm",
+        "salary": 120000
+    },
+    "omar": {
+        "age": 56,
+        "city": "tunis",
+        "salary": 82000
+    },
+    "oliver": {
+        "age": 29,
+        "city": "munich",
+        "salary": 39000
+    }
+}
