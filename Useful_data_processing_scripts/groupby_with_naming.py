@@ -34,6 +34,7 @@ df = pd.DataFrame(
     }
 )
 print(df)
+df.to_csv("groupby_work_data.csv", index=False)
 
 result = df.groupby(["surname", "city", "id"]).agg(
     min_date=("date", "min"),
@@ -48,3 +49,4 @@ result = df.groupby(["surname", "city", "id"]).agg(
     median_working_hours=("working_hours", "median"),
 ).reset_index()
 print(result)
+result.to_csv("groupby_result.csv", index=False)
