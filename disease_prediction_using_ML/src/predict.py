@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # Importing libraries
 import pandas as pd
 import numpy as np

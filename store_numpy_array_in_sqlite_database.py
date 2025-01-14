@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # From https://pythonforthelab.com/blog/storing-data-with-sqlite/
 import sqlite3
 import numpy as np

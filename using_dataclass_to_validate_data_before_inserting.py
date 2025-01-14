@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import sqlite3
 from dataclasses import dataclass, field
 from typing import Any
