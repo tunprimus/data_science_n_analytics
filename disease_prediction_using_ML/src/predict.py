@@ -169,6 +169,20 @@ data_dict = {
 
 
 def predict_disease(symptoms):
+    """
+    Predict the disease given the symptoms.
+
+    Parameters
+    ----------
+    symptoms : str
+        String of comma-separated symptoms.
+
+    Returns
+    -------
+    predictions : dict
+        Dictionary of predictions from each model and the final prediction.
+    """
+
     symptoms = symptoms.split(",")
     # create input data for models
     input_data = [0] * len(data_dict["symptom_index"])
