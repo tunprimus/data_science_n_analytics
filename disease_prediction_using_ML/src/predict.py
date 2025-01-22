@@ -21,6 +21,17 @@ np.bool = np.bool_
 
 pd.set_option("mode.copy_on_write", True)
 
+RANDOM_SAMPLE_SIZE = 13
+RANDOM_SEED = 42
+GOLDEN_RATIO = 1.618033989
+FIG_WIDTH = 30
+FIG_HEIGHT = FIG_WIDTH / GOLDEN_RATIO
+FIG_DPI = 72
+TEST_SIZE = 0.25
+NUM_ESTIMATORS = 100
+MAX_DEPTH = 4
+NUM_NEIGHBOURS = 10
+
 # Path to dataset
 data_path_train = "../data/disease_prediction_g4g_training.csv"
 data_path_test = "../data/disease_prediction_g4g_testing.csv"
@@ -36,7 +47,7 @@ temp_df = pd.DataFrame({
     "Counts": disease_counts.values
 })
 
-plt.figure(figsize=(18, 8))
+plt.figure(figsize=(FIG_WIDTH, FIG_HEIGHT), dpi=FIG_DPI)
 sns.barplot(x = "Disease", y = "Counts", data = temp_df)
 plt.xticks(rotation = 90)
 plt.show()
@@ -48,7 +59,7 @@ data["prognosis"] = encoder.fit_transform(data["prognosis"])
 # Splitting the data for training and testing the model
 X = data.iloc[:, :-1]
 y = data.iloc[:, -1]
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state = 42)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=TEST_SIZE, random_state = RANDOM_SEED)
 
 print(f"Train: {X_train.shape}, {y_train.shape}")
 print(f"Test: {X_test.shape}, {y_test.shape}")
@@ -63,7 +74,7 @@ def cv_scoring(estimator, X, y):
 models = {
     "SVC": SVC(),
     "Gaussian NB": GaussianNB(),
-    "Random Forest": RandomForestClassifier(random_state=42)
+    "Random Forest": RandomForestClassifier(random_state=RANDOM_SEED)
 }
 
 # Producing cross validation score for the models
@@ -87,7 +98,7 @@ print(f"Accuracy on train data by SVM Classifier: {accuracy_score(y_train, svm_m
 
 print(f"Accuracy on test data by SVM Classifier: {accuracy_score(y_test, preds) * 100}")
 cf_matrix = confusion_matrix(y_test, preds)
-plt.figure(figsize=(12,8))
+plt.figure(figsize=(FIG_WIDTH, FIG_HEIGHT), dpi=FIG_DPI)
 sns.heatmap(cf_matrix, annot=True)
 plt.title("Confusion Matrix for SVM Classifier on Test Data")
 plt.show()
@@ -101,13 +112,13 @@ print(f"Accuracy on train data by Naive Bayes Classifier: {accuracy_score(y_trai
 
 print(f"Accuracy on test data by Naive Bayes Classifier: {accuracy_score(y_test, preds) * 100}")
 cf_matrix = confusion_matrix(y_test, preds)
-plt.figure(figsize=(12,8))
+plt.figure(figsize=(FIG_WIDTH, FIG_HEIGHT), dpi=FIG_DPI)
 sns.heatmap(cf_matrix, annot=True)
 plt.title("Confusion Matrix for Naive Bayes Classifier on Test Data")
 plt.show()
 
 # Training and testing Random Forest Classifier
-rf_model = RandomForestClassifier(random_state=42)
+rf_model = RandomForestClassifier(random_state=RANDOM_SEED)
 rf_model.fit(X_train, y_train)
 preds = rf_model.predict(X_test)
 
@@ -115,7 +126,7 @@ print(f"Accuracy on train data by Random Forest Classifier: {accuracy_score(y_tr
 
 print(f"Accuracy on test data by Random Forest Classifier: {accuracy_score(y_test, preds) * 100}")
 cf_matrix = confusion_matrix(y_test, preds)
-plt.figure(figsize=(12,8))
+plt.figure(figsize=(FIG_WIDTH, FIG_HEIGHT), dpi=FIG_DPI)
 sns.heatmap(cf_matrix, annot=True)
 plt.title("Confusion Matrix for Random Forest Classifier on Test Data")
 plt.show()
@@ -126,7 +137,7 @@ plt.show()
 # Training the models on whole data
 final_svm_model = SVC()
 final_nb_model = GaussianNB()
-final_rf_model = RandomForestClassifier(random_state = 42)
+final_rf_model = RandomForestClassifier(random_state = RANDOM_SEED)
 final_svm_model.fit(X, y)
 final_nb_model.fit(X, y)
 final_rf_model.fit(X, y)
@@ -147,7 +158,7 @@ final_preds = [mode([i, j, k])[0][0] for i, j, k in zip(svm_preds, nb_preds, rf_
 print(f"Accuracy on Test dataset by the combined model: {accuracy_score(test_Y, final_preds) * 100}")
 
 cf_matrix = confusion_matrix(test_Y, final_preds)
-plt.figure(figsize=(12,8))
+plt.figure(figsize=(FIG_WIDTH, FIG_HEIGHT), dpi=FIG_DPI)
 
 sns.heatmap(cf_matrix, annot = True)
 plt.title("Confusion Matrix for Combined Model on Test Dataset")
@@ -183,7 +194,8 @@ def predict_disease(symptoms):
         Dictionary of predictions from each model and the final prediction.
     """
 
-    symptoms = symptoms.split(",")
+    buffer = symptoms.lower().split(",")
+    symptoms = [item.strip().replace(" ", "_") for item in buffer]
     # create input data for models
     input_data = [0] * len(data_dict["symptom_index"])
     for symptom in symptoms:
