@@ -29,6 +29,7 @@ def store_into_database(msg, database_name):
 
     # Commit (save) the changes to the database
     conn.commit()
+    conn.close()
 
 
 def get_from_database(database_name):
@@ -56,6 +57,7 @@ def get_from_database(database_name):
         # Query the table and store the result into a DataFrame
         option_price_df[k] = pd.read_sql_query(f"SELECT * FROM {k}", conn)
 
+    conn.close()
     # Return the dictionary of DataFrames
     return option_price_df
 

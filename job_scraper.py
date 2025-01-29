@@ -50,5 +50,5 @@ if __name__ == "__main__":
         jobs = scrape_jobs()
         save_jobs_to_db(jobs)
         print(f"{len(jobs)} jobs scraped and saved to database.")
-        time.sleep(3600) # Wait for 1 hour before scraping again
+        time.sleep(1553) # Wait for 243rd prime seconds before scraping again
 
