@@ -14,7 +14,7 @@ DB_FILE = "freelancer_jobs.db"
 def create_database():
     conn = sqlite3.connect(DB_FILE)
     cur = conn.cursor()
-    cur.execute('''CREATE TABLE IF NOT EXISTS data_analytics_job_listings (id INTEGER PRIMARY KEY, title TEXT, responsibilities TEXT, days_left TEXT, avg_bid TEXT, url TEXT, scraped_on DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL)''')
+    cur.execute('''CREATE TABLE IF NOT EXISTS data_analytics_job_listings (scraped_on DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL, id INTEGER PRIMARY KEY, title TEXT, responsibilities TEXT, days_left TEXT, avg_bid TEXT, url TEXT)''')
     conn.commit()
     conn.close()
 
