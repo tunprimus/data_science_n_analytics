@@ -23,7 +23,7 @@ def store_into_database(msg, database_name):
         # Iterate over the dictionary items
         for name, df in msg.items():
             print(name)  # Print the name of the DataFrame
-            print(df)    # Print the contents of the DataFrame
+            print(df)  # Print the contents of the DataFrame
             # Store the DataFrame into a SQL table with the same name
             df.to_sql(name, conn, if_exists="replace", index=True)
 
@@ -66,4 +66,3 @@ def get_from_database(database_name):
 
         # Return the dictionary of DataFrames
         return option_price_df
-
