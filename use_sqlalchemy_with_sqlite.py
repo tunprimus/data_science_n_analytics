@@ -52,6 +52,13 @@ data = [
 session.add_all(data)
 session.commit()
 
+
+class Colour:
+    def __init__(self, r, g, b):
+        self.r = r
+        self.g = g
+        self.b = b
+
 # Assuming a Colour class is defined elsewhere
 class ColourType(TypeDecorator):
     impl = String
