@@ -36,4 +36,5 @@ sqlite3.register_converter("array", convert_array)
 # It is important to note that for the above code to work when you start the connection with the database, you should add the following:
 #
 # conn = sqlite3.connect("database_name.db", detect_types=sqlite3.PARSE_DECLTYPES)
+# with sqlite3.connect("database_name.db", detect_types=sqlite3.PARSE_DECLTYPES) as conn:
 #
