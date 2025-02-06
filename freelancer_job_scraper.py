@@ -12,11 +12,11 @@ URL = "https://www.freelancer.com/jobs/data-analytics/"
 DB_FILE = "freelancer_jobs.db"
 
 def create_database():
-    conn = sqlite3.connect(DB_FILE)
-    cur = conn.cursor()
-    cur.execute('''CREATE TABLE IF NOT EXISTS freelancer_data_analytics_jobs (scraped_on DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL, id INTEGER PRIMARY KEY, title TEXT, responsibilities TEXT, days_left TEXT, avg_bid TEXT, url TEXT)''')
-    conn.commit()
-    conn.close()
+    with sqlite3.connect(DB_FILE) as conn:
+        cur = conn.cursor()
+        cur.execute('''CREATE TABLE IF NOT EXISTS freelancer_data_analytics_jobs (scraped_on DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL, id INTEGER PRIMARY KEY, title TEXT, responsibilities TEXT, days_left TEXT, avg_bid TEXT, url TEXT)''')
+        conn.commit()
+        # conn.close()
 
 def scrape_jobs():
     response = requests.get(URL)
