@@ -14,7 +14,7 @@ DB_FILE = "freelancer_jobs.db"
 def create_database():
     conn = sqlite3.connect(DB_FILE)
     cur = conn.cursor()
-    cur.execute('''CREATE TABLE IF NOT EXISTS data_analytics_job_listings (scraped_on DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL, id INTEGER PRIMARY KEY, title TEXT, responsibilities TEXT, days_left TEXT, avg_bid TEXT, url TEXT)''')
+    cur.execute('''CREATE TABLE IF NOT EXISTS freelancer_data_analytics_jobs (scraped_on DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL, id INTEGER PRIMARY KEY, title TEXT, responsibilities TEXT, days_left TEXT, avg_bid TEXT, url TEXT)''')
     conn.commit()
     conn.close()
 
@@ -40,7 +40,7 @@ def scrape_jobs():
 def save_jobs_to_db(jobs):
     conn = sqlite3.connect(DB_FILE)
     cur = conn.cursor()
-    cur.executemany("INSERT INTO data_analytics_job_listings (title, responsibilities, days_left, avg_bid, url) VALUES (?,?,?,?,?)", jobs)
+    cur.executemany("INSERT INTO freelancer_data_analytics_jobs (title, responsibilities, days_left, avg_bid, url) VALUES (?,?,?,?,?)", jobs)
     conn.commit()
     conn.close()
 
