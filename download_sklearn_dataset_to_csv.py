@@ -10,6 +10,19 @@ np.bool = np.bool_
 pd.set_option("mode.copy_on_write", True)
 
 def download_sklearn_dataset_to_csv(dataset_name, path_to_save):
+    """
+    Downloads the given sklearn dataset and saves it to a csv file.
+
+    Args:
+        dataset_name (str): The name of the dataset to download.
+        path_to_save (str): The path where the csv file should be saved.
+
+    Returns:
+        None
+
+    Raises:
+        ValueError: If the dataset_name is not recognised.
+    """
     if path_to_save:
         real_path_to_save = realpath(path_to_save)
     else:
