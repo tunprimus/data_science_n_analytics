@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-import sqlite3
-from os.path import realpath as realpath
-
+import inspect
 import numpy as np
 import pandas as pd
+import sqlite3
+from os.path import realpath as realpath
 
 # Monkey patching NumPy >= 1.24 in order to successfully import model from sklearn and other libraries
 np.float = np.float64
@@ -31,6 +31,10 @@ real_path_to_gdp_data = realpath(path_to_gdp_data)
 real_path_to_journal_data = realpath(path_to_journal_data)
 
 
+# ======================================= #
+# Utility Functions
+# ======================================= #
+
 # Function to view preliminary info from DataFrame
 def df_preliminary_info(df):
     print("------ DataFrame Random Sample: -----\n")
@@ -43,6 +47,63 @@ def df_preliminary_info(df):
     print(df.tail())
     print("\n------ DataFrame Describe: -----\n")
     print(df.describe())
+
+# Function to store DataFrame inside sqlite database
+def save_dataframes_to_sqlite(db_name, *dataframes):
+    """
+    Save multiple DataFrames into different tables inside a single SQLite database.
+
+    Args:
+        db_name (str): Name of the SQLite database file.
+        *dataframes (DataFrames): Variable number of DataFrames to be saved.
+    """
+    with sqlite3.connect(db_name) as conn:
+        frame = inspect.currentframe().f_back
+        for df in dataframes:
+            table_name = [var for var, val in frame.f_locals.items() if val is df][0]
+            df.to_sql(table_name, conn, if_exists='replace', index=False)
+        conn.commit()
+    print(f"DataFrames saved to {db_name}")
+
+
+def save_dataframes_to_sqlite_by_dict_(db_name, **dataframes):
+    """
+    Save multiple DataFrames into different tables inside a single SQLite database.
+
+    Args:
+        db_name (str): Name of the SQLite database file.
+        **dataframes (keyword arguments): DataFrame variables and their corresponding table names.
+            Example: df1=pd.DataFrame(), df2=pd.DataFrame()
+    """
+    with sqlite3.connect(db_name) as conn:
+        for table_name, df in dataframes.items():
+            df.to_sql(table_name, conn, if_exists='replace', index=False)
+        conn.commit()
+    print(f"DataFrames saved to {db_name}")
+
+
+def save_dataframes_to_sqlite_by_tuples(db_name, *dataframes):
+    """
+    Save multiple DataFrames into different tables inside a single SQLite database.
+
+    Args:
+        db_name (str): Name of the SQLite database file.
+        *dataframes (tuple of tuples): Each tuple contains a DataFrame and its corresponding table name.
+            Example: (df1, 'table1'), (df2, 'table2'), ...
+    """
+    with sqlite3.connect(db_name) as conn:
+        for df, table_name in dataframes:
+            df.to_sql(table_name, conn, if_exists='replace', index=False)
+        conn.commit()
+    print(f"DataFrames saved to {db_name}")
+
+
+# Function to load all tables into a dictionary of DataFrames
+def load_dataframes_from_sqlite(db_name):
+    with sqlite3.connect(db_name) as conn:
+        frame = inspect.currentframe().f_back
+        tables = {var: pd.read_sql_table(var, conn) for var in frame.f_locals.keys()}
+    return tables
 
 
 # ======================================= #
