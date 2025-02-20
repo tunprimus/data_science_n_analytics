@@ -31,9 +31,9 @@ real_path_to_gdp_data = realpath(path_to_gdp_data)
 real_path_to_journal_data = realpath(path_to_journal_data)
 
 
-# ======================================= #
-# Utility Functions
-# ======================================= #
+# ^^^^^^^^^^^^^^^^^^^^^^ #
+#  Utility Functions
+# ^^^^^^^^^^^^^^^^^^^^^^ #
 
 # Function to view preliminary info from DataFrame
 def df_preliminary_info(df):
@@ -49,61 +49,94 @@ def df_preliminary_info(df):
     print(df.describe())
 
 # Function to store DataFrame inside sqlite database
-def save_dataframes_to_sqlite(db_name, *dataframes):
+def save_dataframes_to_sqlite(path_to_db, *dataframes):
     """
     Save multiple DataFrames into different tables inside a single SQLite database.
 
     Args:
-        db_name (str): Name of the SQLite database file.
+        path_to_db (str): Name of the SQLite database file.
         *dataframes (DataFrames): Variable number of DataFrames to be saved.
     """
-    with sqlite3.connect(db_name) as conn:
+    if path_to_db:
+        real_path_to_db = realpath(path_to_db)
+    else:
+        real_path_to_db = realpath(".")
+    with sqlite3.connect(real_path_to_db) as conn:
         frame = inspect.currentframe().f_back
         for df in dataframes:
             table_name = [var for var, val in frame.f_locals.items() if val is df][0]
             df.to_sql(table_name, conn, if_exists='replace', index=False)
         conn.commit()
-    print(f"DataFrames saved to {db_name}")
+    print(f"DataFrames saved to {real_path_to_db}")
 
 
-def save_dataframes_to_sqlite_by_dict_(db_name, **dataframes):
+def save_dataframes_to_sqlite_by_dict_(path_to_db, **dataframes):
     """
     Save multiple DataFrames into different tables inside a single SQLite database.
 
     Args:
-        db_name (str): Name of the SQLite database file.
+        path_to_db (str): Name of the SQLite database file.
         **dataframes (keyword arguments): DataFrame variables and their corresponding table names.
             Example: df1=pd.DataFrame(), df2=pd.DataFrame()
     """
-    with sqlite3.connect(db_name) as conn:
+    if path_to_db:
+        real_path_to_db = realpath(path_to_db)
+    else:
+        real_path_to_db = realpath(".")
+    with sqlite3.connect(real_path_to_db) as conn:
         for table_name, df in dataframes.items():
             df.to_sql(table_name, conn, if_exists='replace', index=False)
         conn.commit()
-    print(f"DataFrames saved to {db_name}")
+    print(f"DataFrames saved to {real_path_to_db}")
 
 
-def save_dataframes_to_sqlite_by_tuples(db_name, *dataframes):
+def save_dataframes_to_sqlite_by_tuples(path_to_db, *dataframes):
     """
     Save multiple DataFrames into different tables inside a single SQLite database.
 
     Args:
-        db_name (str): Name of the SQLite database file.
+        path_to_db (str): Name of the SQLite database file.
         *dataframes (tuple of tuples): Each tuple contains a DataFrame and its corresponding table name.
             Example: (df1, 'table1'), (df2, 'table2'), ...
     """
-    with sqlite3.connect(db_name) as conn:
+    if path_to_db:
+        real_path_to_db = realpath(path_to_db)
+    else:
+        real_path_to_db = realpath(".")
+    with sqlite3.connect(real_path_to_db) as conn:
         for df, table_name in dataframes:
             df.to_sql(table_name, conn, if_exists='replace', index=False)
         conn.commit()
-    print(f"DataFrames saved to {db_name}")
+    print(f"DataFrames saved to {real_path_to_db}")
 
 
 # Function to load all tables into a dictionary of DataFrames
-def load_dataframes_from_sqlite(db_name):
-    with sqlite3.connect(db_name) as conn:
+def load_dataframes_from_sqlite(path_to_db):
+    if path_to_db:
+        real_path_to_db = realpath(path_to_db)
+    else:
+        real_path_to_db = realpath(".")
+    with sqlite3.connect(real_path_to_db) as conn:
         frame = inspect.currentframe().f_back
         tables = {var: pd.read_sql_table(var, conn) for var in frame.f_locals.keys()}
     return tables
+
+
+# Parsing a sqlite database into a dictionary of DataFrames without knowing the table names
+def read_all_tables_from_sqlite(path_to_db):
+    if path_to_db:
+        real_path_to_db = realpath(path_to_db)
+    else:
+        real_path_to_db = realpath(".")
+    with sqlite3.connect(real_path_to_db) as conn:
+        db_tables = list(pd.read_sql_table("SELECT name FROM sqlite_master WHERE type = 'table';", conn)['name'])
+        out_dict = {tbl: pd.read_sql_query(f"SELECT * FROM {tbl}", conn) for tbl in db_tables}
+    return out_dict
+
+
+# ^^^^^^^^^^^^^^^^^^^^^^ #
+#  End utility functions
+# $$$$$$$$$$$$$$$$$$$$$$ #
 
 
 # ======================================= #
@@ -225,4 +258,6 @@ def generate_journal_dataframe(real_path_to_journal_data):
 
 ScimEn = generate_journal_dataframe(real_path_to_journal_data)
 df_preliminary_info(ScimEn)
+
+save_dataframes_to_sqlite("mid_semester_assignment.db", Energy, GDP, ScimEn)
 
