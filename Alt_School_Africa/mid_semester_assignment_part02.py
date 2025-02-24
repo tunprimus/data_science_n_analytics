@@ -137,6 +137,24 @@ def fetch_all_tables_from_sqlite(path_to_db):
     return out_dict
 
 
+def display_sqlite_table_info(path_to_db):
+    sql_query = "SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%';"
+    if path_to_db:
+        real_path_to_db = realpath(path_to_db)
+    with sqlite3.connect(real_path_to_db) as conn:
+        cur = conn.cursor()
+        cur.execute(sql_query)
+        tables = cur.fetchall()
+        db_tables = [table[0] for table in tables]
+        for table_name in db_tables:
+            print(f"Table: {table_name}")
+            cur.execute(f"PRAGMA table_info('{table_name}');")
+            columns = cur.fetchall()
+            for column in columns:
+                print(f"Column: {column[1]}, Type: {column[2]}")
+            print("\n")
+
+
 # ^^^^^^^^^^^^^^^^^^^^^^ #
 #  End utility functions
 # $$$$$$$$$$$$$$$$$$$$$$ #
@@ -146,4 +164,5 @@ def fetch_all_tables_from_sqlite(path_to_db):
 # Retrieve Energy, GDP and Journal DataFrames from Sqlite
 # ======================================= #
 fetch_all_tables_from_sqlite(real_path_to_database)
+display_sqlite_table_info(real_path_to_database)
 
