@@ -19,7 +19,7 @@ FIG_WIDTH = 20
 FIG_HEIGHT = FIG_WIDTH / GOLDEN_RATIO
 FIG_SIZE = (FIG_WIDTH, FIG_HEIGHT)
 FIG_DPI = 72
-PETAJOULES_TO_GIGAJOULES_VAL = 1000000
+PETAJOULES_TO_GIGAJOULES_VAL = 1_000_000
 
 # Path to Datasets
 path_to_energy_data = "../000_common_dataset/from-AltSchoolAfrica-Energy_Indicators.xls"
@@ -65,7 +65,7 @@ def save_dataframes_to_sqlite(path_to_db, *dataframes):
         frame = inspect.currentframe().f_back
         for df in dataframes:
             table_name = [var for var, val in frame.f_locals.items() if val is df][0]
-            df.to_sql(table_name, conn, if_exists='replace', index=False)
+            df.to_sql(table_name, conn, if_exists="replace", index=False)
         conn.commit()
     print(f"DataFrames saved to {real_path_to_db}")
 
@@ -85,7 +85,7 @@ def save_dataframes_to_sqlite_by_dict_(path_to_db, **dataframes):
         real_path_to_db = realpath(".")
     with sqlite3.connect(real_path_to_db) as conn:
         for table_name, df in dataframes.items():
-            df.to_sql(table_name, conn, if_exists='replace', index=False)
+            df.to_sql(table_name, conn, if_exists="replace", index=False)
         conn.commit()
     print(f"DataFrames saved to {real_path_to_db}")
 
@@ -97,7 +97,7 @@ def save_dataframes_to_sqlite_by_tuples(path_to_db, *dataframes):
     Args:
         path_to_db (str): Name of the SQLite database file.
         *dataframes (tuple of tuples): Each tuple contains a DataFrame and its corresponding table name.
-            Example: (df1, 'table1'), (df2, 'table2'), ...
+            Example: (df1, "table1"), (df2, "table2"), ...
     """
     if path_to_db:
         real_path_to_db = realpath(path_to_db)
@@ -105,7 +105,7 @@ def save_dataframes_to_sqlite_by_tuples(path_to_db, *dataframes):
         real_path_to_db = realpath(".")
     with sqlite3.connect(real_path_to_db) as conn:
         for df, table_name in dataframes:
-            df.to_sql(table_name, conn, if_exists='replace', index=False)
+            df.to_sql(table_name, conn, if_exists="replace", index=False)
         conn.commit()
     print(f"DataFrames saved to {real_path_to_db}")
 
