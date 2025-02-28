@@ -261,13 +261,13 @@ ScimEn = generate_journal_dataframe(real_path_to_journal_data)
 df_preliminary_info(ScimEn)
 
 profile_energy = ProfileReport(Energy, title="Profile Report for Energy")
-# profile_energy.to_notebook_iframe()
+profile_energy.to_notebook_iframe()
 
 profile_gdp = ProfileReport(GDP, title="Profile Report for GDP")
-# profile_gdp.to_notebook_iframe()
+profile_gdp.to_notebook_iframe()
 
 profile_scim_en = ProfileReport(ScimEn, title="Profile Report for ScimEn")
-# profile_scim_en.to_notebook_iframe()
+profile_scim_en.to_notebook_iframe()
 
-# save_dataframes_to_sqlite("mid_semester_assignment.db", Energy, GDP, ScimEn)
+save_dataframes_to_sqlite("mid_semester_assignment.db", Energy, GDP, ScimEn)
 
