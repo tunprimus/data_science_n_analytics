@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import sqlite3
 from os.path import realpath as realpath
+from ydata_profiling import ProfileReport
 
 # Monkey patching NumPy >= 1.24 in order to successfully import model from sklearn and other libraries
 np.float = np.float64
@@ -163,6 +164,18 @@ def display_sqlite_table_info(path_to_db):
 # ======================================= #
 # Retrieve Energy, GDP and Journal DataFrames from Sqlite
 # ======================================= #
-fetch_all_tables_from_sqlite(real_path_to_database)
 display_sqlite_table_info(real_path_to_database)
+all_dataframes = fetch_all_tables_from_sqlite(real_path_to_database)
+
+print(all_dataframes.keys())
+
+profile_energy = ProfileReport(all_dataframes["Energy"], title="Profile Report for Energy")
+# profile_energy.to_notebook_iframe()
+
+profile_gdp = ProfileReport(all_dataframes["GDP"], title="Profile Report for GDP")
+# profile_gdp.to_notebook_iframe()
+
+profile_scim_en = ProfileReport(all_dataframes["ScimEn"], title="Profile Report for ScimEn")
+# profile_scim_en.to_notebook_iframe()
+
 
