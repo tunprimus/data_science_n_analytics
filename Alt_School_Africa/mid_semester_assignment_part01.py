@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import sqlite3
 from os.path import realpath as realpath
+from ydata_profiling import ProfileReport
 
 # Monkey patching NumPy >= 1.24 in order to successfully import model from sklearn and other libraries
 np.float = np.float64
@@ -259,5 +260,14 @@ def generate_journal_dataframe(real_path_to_journal_data):
 ScimEn = generate_journal_dataframe(real_path_to_journal_data)
 df_preliminary_info(ScimEn)
 
-save_dataframes_to_sqlite("mid_semester_assignment.db", Energy, GDP, ScimEn)
+profile_energy = ProfileReport(Energy, title="Profile Report for Energy")
+# profile_energy.to_notebook_iframe()
+
+profile_gdp = ProfileReport(GDP, title="Profile Report for GDP")
+# profile_gdp.to_notebook_iframe()
+
+profile_scim_en = ProfileReport(ScimEn, title="Profile Report for ScimEn")
+# profile_scim_en.to_notebook_iframe()
+
+# save_dataframes_to_sqlite("mid_semester_assignment.db", Energy, GDP, ScimEn)
 
