@@ -4,16 +4,18 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from os.path import realpath as realpath
 
-path_to_insurance_data = "../000_common_dataset/insurance.csv"
+# Load Datasets into DataFrames
+path_to_insurance_data = "../000_common_dataset/us_health_insurance.csv"
 path_to_nba_data = "../000_common_dataset/nba_player_salaries-2022-2023_season.csv"
 
 real_path_to_insurance_data = realpath(path_to_insurance_data)
 real_path_to_nba_data = realpath(path_to_nba_data)
+
 df_insurance = pd.read_csv(real_path_to_insurance_data)
-df_nba = pd.read_csv(real_path_to_nba_data)
+df_nba_salaries = pd.read_csv(real_path_to_nba_data)
 
 
-def univariate(df):
+def univariate_stats(df):
     output_df = pd.DataFrame(
         columns=[
             "feature",
@@ -34,7 +36,7 @@ def univariate(df):
         ]
     )
     output_df.set_index("feature", inplace=True)
-    for col in df:
+    for col in df.columns:
         # Calculate metrics that apply to all columns dtypes
         dtype = df[col].dtype
         count = df[col].count()
@@ -68,6 +70,7 @@ def univariate(df):
                 skew,
                 kurt,
             ]
+            sns.histplot(data=df, x=col)
         else:
             output_df.loc[col] = [
                 dtype,
@@ -85,12 +88,14 @@ def univariate(df):
                 "--",
                 "--",
             ]
+            sns.countplot(data=df, x=col)
         # print(f"Column: {col}")
         # print("dtype", "count", "missing", "unique", "mode")
         # print(dtype, count, missing, unique, mode)
         # print()
+        plt.show()
     return output_df
 
 
-univariate(df_insurance)
-univariate(df_nba)
+univariate_stats(df_insurance)
+univariate_stats(df_nba_salaries)
