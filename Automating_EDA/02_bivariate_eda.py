@@ -146,8 +146,8 @@ def bivariate_stats(df, label, num_dp=4):
         if feature != label:
             df_temp = df[[feature, label]].copy()
             df_temp = df_temp.dropna().copy()
+            missing = (df.shape[0] - df_temp.shape[0])
             buffer = ((df.shape[0] - df_temp.shape[0]) / df.shape[0])
-            missing = round(buffer, num_dp)
             missing_pct = round(buffer * 100, num_dp)
             if (pd.api.types.is_numeric_dtype(df_temp[feature])) and (pd.api.types.is_numeric_dtype(df_temp[label])):
                 # Process N2N relationships
