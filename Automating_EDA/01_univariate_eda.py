@@ -16,6 +16,24 @@ df_nba_salaries = pd.read_csv(real_path_to_nba_data)
 
 
 def univariate_stats(df):
+    """
+    Generate descriptive statistics and visualisations for each feature in a DataFrame.
+
+    This function computes and returns a DataFrame containing a variety of univariate
+    statistics for each feature (column) in the input DataFrame `df`. It calculates
+    metrics such as the data type, count of non-missing values, number of missing values,
+    number of unique values, and mode for all features. For numerical features, it
+    additionally calculates minimum, first quartile, median, third quartile, maximum,
+    mean, standard deviation, skewness, and kurtosis. It also creates a histogram for
+    numerical features and a count plot for categorical features.
+
+    Parameters:
+    - df (pd.DataFrame): The DataFrame for which univariate statistics are to be computed.
+
+    Returns:
+    - pd.DataFrame: A DataFrame where each row corresponds to a feature from the input
+      DataFrame and columns contain the calculated statistics.
+    """
     output_df = pd.DataFrame(
         columns=[
             "feature",
