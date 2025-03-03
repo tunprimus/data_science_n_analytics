@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-import pandas as pd
 import matplotlib.pyplot as plt
+import pandas as pd
 import seaborn as sns
 from os.path import realpath as realpath
 
