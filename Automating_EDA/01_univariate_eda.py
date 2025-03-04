@@ -34,6 +34,10 @@ def univariate_stats(df):
     - pd.DataFrame: A DataFrame where each row corresponds to a feature from the input
       DataFrame and columns contain the calculated statistics.
     """
+    import matplotlib.pyplot as plt
+    import pandas as pd
+    import seaborn as sns
+
     output_df = pd.DataFrame(
         columns=[
             "feature",

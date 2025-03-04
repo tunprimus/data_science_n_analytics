@@ -42,6 +42,11 @@ def scatterplot(df, feature, label, num_dp=4, linecolour="darkorange"):
     -------
     None
     """
+    import matplotlib.pyplot as plt
+    import pandas as pd
+    import seaborn as sns
+    from scipy import stats
+
     # Create the plot
     # sns.scatterplot(x=df[feature], y=df[label])
     sns.regplot(x=df[feature], y=df[label], line_kws={"color": linecolour})
@@ -86,6 +91,33 @@ def scatterplot(df, feature, label, num_dp=4, linecolour="darkorange"):
 
 
 def bar_chart(df, feature, label, num_dp=4, alpha=0.05, sig_ttest_only=True):
+    """
+    Creates a bar chart with a one-way ANOVA and pairwise t-tests with Bonferroni correction.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        The DataFrame containing the data
+    feature : str
+        The feature to plot on the x-axis
+    label : str
+        The feature to plot on the y-axis
+    num_dp : int
+        The number of decimal places to round the results to
+    alpha : float
+        The significance level for the t-tests
+    sig_ttest_only : bool
+        If True, only print the t-tests with p <= alpha / number of ttest comparisons
+
+    Returns
+    -------
+    None
+    """
+    import matplotlib.pyplot as plt
+    import pandas as pd
+    import seaborn as sns
+    from scipy import stats
+
     # Make sure that the feature is categorical and the label is numerical
     if pd.api.types.is_numeric_dtype(df[feature]):
         num = feature
@@ -167,6 +199,12 @@ def crosstab(df, feature, label, num_dp=4):
     -------
     None
     """
+    import matplotlib.pyplot as plt
+    import numpy as np
+    import pandas as pd
+    import seaborn as sns
+    from scipy import stats
+
     contingency_table = pd.crosstab(df[feature], df[label])
     results = stats.chi2_contingency(contingency_table)
     X2 = results.statistic
@@ -190,6 +228,28 @@ def crosstab(df, feature, label, num_dp=4):
 
 
 def bivariate_stats(df, label, num_dp=4):
+    """
+    Generates a DataFrame containing a variety of bivariate statistics for each feature in a DataFrame vs a given label.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        The DataFrame containing the data
+    label : str
+        The label to be used for the target variable
+    num_dp : int
+        The number of decimal places to round the results to
+
+    Returns
+    -------
+    pandas.DataFrame
+        A DataFrame containing the results of the bivariate statistics
+    """
+    import matplotlib.pyplot as plt
+    import pandas as pd
+    import seaborn as sns
+    from scipy import stats
+
     output_df = pd.DataFrame(columns=["missing", "missing_%", "skew", "type", "num_unique", "p", "r", "tau", "rho", "y = m(x) + b", "F", "X2"])
 
     for feature in df.columns:
