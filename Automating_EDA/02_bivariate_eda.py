@@ -48,14 +48,18 @@ def scatterplot(df, feature, label, num_dp=4, linecolour="darkorange"):
     # Calculate the regression line
     results = stats.linregress(df[feature], df[label])
     slope = results.slope
+    slope = round(slope, num_dp)
     intercept = results.intercept
+    intercept = round(intercept, num_dp)
     r = results.rvalue
+    r = round(r, num_dp)
     p = results.pvalue
+    p = round(p, num_dp)
     stderr = results.stderr
     intercept_stderr = results.intercept_stderr
-    text_str = f"y = {round(slope, num_dp)}x + {round(intercept, num_dp)}\n"
-    text_str += f"r = {round(r, num_dp)}\n"
-    text_str += f"p = {round(p, num_dp)}"
+    text_str = f"y = {slope}x + {intercept}\n"
+    text_str += f"r = {r}\n"
+    text_str += f"p = {p}"
     # Annotations
     plt.text(0.95, 0.2, text_str, fontsize=12, transform=plt.gcf().transFigure)
     # Show plot
@@ -91,8 +95,9 @@ def bar_chart(df, feature, label, num_dp=4):
         n_list = df[df[feature] == g][label]
         group_lists.append(n_list)
     F, p = stats.f_oneway(*group_lists)
-    text_str = f"F: {round(F, num_dp)}\n"
-    text_str += f"p: {round(p, num_dp)}"
+    F, p = round(F, num_dp), round(p, num_dp)
+    text_str = f"F: {F}\n"
+    text_str += f"p: {p}"
     # If there are too many feature groups, print x labels vertically
     if df[feature].nunique() > 7:
         plt.xticks(rotation=90)
@@ -124,12 +129,15 @@ def crosstab(df, feature, label, num_dp=4):
     contingency_table = pd.crosstab(df[feature], df[label])
     results = stats.chi2_contingency(contingency_table)
     X2 = results.statistic
+    X2 = round(X2, num_dp)
     p = results.pvalue
+    p = round(p, num_dp)
     dof = results.dof
+    dof = round(dof, num_dp)
     expected_freq = results.expected_freq
-    text_str = f"X2: {round(X2, num_dp)}\n"
-    text_str += f"p: {round(p, num_dp)}\n"
-    text_str += f"dof: {round(dof, num_dp)}"
+    text_str = f"X2: {X2}\n"
+    text_str += f"p: {p}\n"
+    text_str += f"dof: {dof}"
     # Annotations
     plt.text(0.95, 0.2, text_str, fontsize=12, transform=plt.gcf().transFigure)
     # Generate heatmap
@@ -157,31 +165,39 @@ def bivariate_stats(df, label, num_dp=4):
                 ## Pearson linear regression
                 results_p = stats.linregress(df_temp[feature], df_temp[label])
                 slope = results_p.slope
+                slope = round(slope, num_dp)
                 intercept = results_p.intercept
+                intercept = round(intercept, num_dp)
                 r = results_p.rvalue
+                r = round(r, num_dp)
                 p = results_p.pvalue
+                p = round(p, num_dp)
                 stderr = results_p.stderr
                 intercept_stderr = results_p.intercept_stderr
                 ## Other linear regressions
                 results_k = stats.kendalltau(df_temp[feature], df_temp[label])
                 tau = results_k.statistic
+                tau = round(tau, num_dp)
                 tp = results_k.pvalue
                 results_r = stats.spearmanr(df_temp[feature], df_temp[label])
                 rho = results_r.statistic
+                rho = round(rho, num_dp)
                 rp = results_r.pvalue
                 ## Skew
                 skew = round((df_temp[feature].skew()), num_dp)
-                output_df.loc[feature] = [missing, f"{missing_pct}%", skew, dtype, num_unique, round(p, num_dp), round(r, num_dp), round(tau, num_dp), round(rho, num_dp), f"y = {round(slope, num_dp)}x + {round(intercept, num_dp)}", "--", "--"]
+                output_df.loc[feature] = [missing, f"{missing_pct}%", skew, dtype, num_unique, p, r, tau, rho, f"y = {slope}x + {intercept}", "--", "--"]
                 scatterplot(df_temp, feature, label)
             elif not(pd.api.types.is_numeric_dtype(df_temp[feature])) and not(pd.api.types.is_numeric_dtype(df_temp[label])):
                 # Process C2C relationships
                 contingency_table = pd.crosstab(df_temp[feature], df_temp[label])
                 results = stats.chi2_contingency(contingency_table)
                 X2 = results.statistic
+                X2 = round(X2, num_dp)
                 p = results.pvalue
+                p = round(p, num_dp)
                 dof = results.dof
                 expected_freq = results.expected_freq
-                output_df.loc[feature] = [missing, f"{missing_pct}%", "--", dtype, num_unique, round(p, num_dp), "--", "--", "--", "--", "--", round(X2, num_dp)]
+                output_df.loc[feature] = [missing, f"{missing_pct}%", "--", dtype, num_unique, p, "--", "--", "--", "--", "--", X2]
                 crosstab(df_temp, feature, label)
             else:
                 # Process C2N and N2C relationships
@@ -199,7 +215,8 @@ def bivariate_stats(df, label, num_dp=4):
                     n_list = df_temp[df_temp[cat] == g][num]
                     group_lists.append(n_list)
                 F, p = stats.f_oneway(*group_lists)
-                output_df.loc[feature] = [missing, f"{missing_pct}%", skew, dtype, num_unique, round(p, num_dp), "--", "--", "--", "--", round(F, num_dp), "--"]
+                F, p = round(F, num_dp), round(p, num_dp)
+                output_df.loc[feature] = [missing, f"{missing_pct}%", skew, dtype, num_unique, p, "--", "--", "--", "--", F, "--"]
                 bar_chart(df_temp, cat, num)
     try:
         return output_df.sort_values(by="p", ascending=True)
