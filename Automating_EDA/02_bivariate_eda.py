@@ -85,44 +85,65 @@ def scatterplot(df, feature, label, num_dp=4, linecolour="darkorange"):
     plt.show()
 
 
-def bar_chart(df, feature, label, num_dp=4):
-    """
-    Create a bar chart of feature by label and calculate the ANOVA between the different levels of feature.
-
-    Parameters
-    ----------
-    df : pandas.DataFrame
-        The DataFrame containing the data
-    feature : str
-        The feature to plot on the x-axis
-    label : str
-        The feature to plot on the y-axis
-    num_dp : int
-        The number of decimal places to round the ANOVA results to
-
-    Returns
-    -------
-    None
-    """
+def bar_chart(df, feature, label, num_dp=4, alpha=0.05, sig_ttest_only=True):
+    # Make sure that the feature is categorical and the label is numerical
+    if pd.api.types.is_numeric_dtype(df[feature]):
+        num = feature
+        cat = label
+    else:
+        num = label
+        cat = feature
     # Create the plot
-    sns.barplot(x=df[feature], y=df[label])
+    sns.barplot(x=df[cat], y=df[num])
     # Create the numerical lists to calculate the ANOVA
-    groups = df[feature].unique()
+    groups = df[cat].unique()
     # print(groups)
     group_lists = []
     for g in groups:
-        n_list = df[df[feature] == g][label]
+        n_list = df[df[cat] == g][num]
         group_lists.append(n_list)
     F, p = stats.f_oneway(*group_lists)
     F, p = round(F, num_dp), round(p, num_dp)
+    # Calculate pairwise t-test for groups
+    ttests = []
+    for i1, g1 in enumerate(groups):
+        for i2, g2 in enumerate(groups):
+            if i2 > i1:
+                list01 = df[df[cat] == g1][num]
+                list02 = df[df[cat] == g2][num]
+                ttest_result = stats.ttest_ind(list01, list02)
+                ttest = ttest_result.statistic
+                ttest = round(ttest, num_dp)
+                ttest_p = ttest_result.pvalue
+                ttest_p = round(ttest_p, num_dp)
+                # if ttest_result.df or ttest_result.confidence_interval():
+                #     dof = ttest_result.df
+                #     dof = round(dof, num_dp)
+                #     low_ci = ttest_result.confidence_interval()[0]
+                #     low_ci = round(low_ci, num_dp)
+                #     high_ci = ttest_result.confidence_interval()[1]
+                #     high_ci = round(high_ci, num_dp)
+                # ttests.append([f"{g1} vs {g2}", ttest, ttest_p, dof, low_ci, high_ci])
+                ttests.append([f"{g1} vs {g2}", ttest, ttest_p])
+    # Bonferroni correction -> adjust p-value threshold to be 0.05/number of ttest comparisons
+    bonferroni = alpha / len(ttests) if len(ttests) > 0 else 0
+    bonferroni = round(bonferroni, num_dp)
     # Create text string
     text_str = f"F: {F}\n"
-    text_str += f"p: {p}"
+    text_str += f"p: {p}\n"
+    text_str += f"Bonferroni p: {bonferroni}"
+    for ttest in ttests:
+        if sig_ttest_only:
+            if ttest[2] <= bonferroni:
+                # text_str += f"\n{ttest[0]}: t = {ttest[1]}, p = {ttest[2]}, dof = {ttest[3]}, CI = [{ttest[4]}, {ttest[5]}]"
+                text_str += f"\n{ttest[0]}:\n     t = {ttest[1]}, p = {ttest[2]}"
+        else:
+            text_str += f"\n{ttest[0]}: t = {ttest[1]}, p = {ttest[2]}"
     # If there are too many feature groups, print x labels vertically
     if df[feature].nunique() > 7:
         plt.xticks(rotation=90)
     # Annotations
-    plt.text(0.95, 0.2, text_str, fontsize=12, transform=plt.gcf().transFigure)
+    plt.text(0.95, 0.1, text_str, fontsize=12, transform=plt.gcf().transFigure)
     # Show plot
     plt.show()
 
@@ -246,13 +267,14 @@ def bivariate_stats(df, label, num_dp=4):
 
 
 
-bivariate_stats(df_insurance, "charges")
-bivariate_stats(df_nba_salaries, "Salary")
-bivariate_stats(df_airline_satisfaction, "satisfaction")
-
 scatterplot(df_insurance, "age", "charges")
 bar_chart(df_insurance, "smoker", "charges")
 bar_chart(df_insurance, "region", "charges")
 crosstab(df_airline_satisfaction, "Gender", "satisfaction")
 crosstab(df_airline_satisfaction, "Class", "satisfaction")
+
+
+bivariate_stats(df_insurance, "charges")
+bivariate_stats(df_nba_salaries, "Salary")
+bivariate_stats(df_airline_satisfaction, "satisfaction")
 
