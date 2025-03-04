@@ -140,25 +140,38 @@ def crosstab(df, feature, label, num_dp=4):
 
 
 def bivariate_stats(df, label, num_dp=4):
-    output_df = pd.DataFrame(columns=["missing", "missing_%", "p", "r", "y = m(x) + b", "F", "X2"])
+    output_df = pd.DataFrame(columns=["missing", "missing_%", "skew", "type", "num_unique", "p", "r", "tau", "rho", "y = m(x) + b", "F", "X2"])
 
     for feature in df.columns:
         if feature != label:
+            # Calculate statistics that apply to all datatypes
             df_temp = df[[feature, label]].copy()
             df_temp = df_temp.dropna().copy()
             missing = (df.shape[0] - df_temp.shape[0])
             buffer = ((df.shape[0] - df_temp.shape[0]) / df.shape[0])
             missing_pct = round(buffer * 100, num_dp)
+            dtype = df_temp[feature].dtype
+            num_unique = df_temp[feature].nunique()
             if (pd.api.types.is_numeric_dtype(df_temp[feature])) and (pd.api.types.is_numeric_dtype(df_temp[label])):
                 # Process N2N relationships
-                results = stats.linregress(df_temp[feature], df_temp[label])
-                slope = results.slope
-                intercept = results.intercept
-                r = results.rvalue
-                p = results.pvalue
-                stderr = results.stderr
-                intercept_stderr = results.intercept_stderr
-                output_df.loc[feature] = [missing, f"{missing_pct}%", round(p, num_dp), round(r, num_dp), f"y = {round(slope, num_dp)}x + {round(intercept, num_dp)}", "--", "--"]
+                ## Pearson linear regression
+                results_p = stats.linregress(df_temp[feature], df_temp[label])
+                slope = results_p.slope
+                intercept = results_p.intercept
+                r = results_p.rvalue
+                p = results_p.pvalue
+                stderr = results_p.stderr
+                intercept_stderr = results_p.intercept_stderr
+                ## Other linear regressions
+                results_k = stats.kendalltau(df_temp[feature], df_temp[label])
+                tau = results_k.statistic
+                tp = results_k.pvalue
+                results_r = stats.spearmanr(df_temp[feature], df_temp[label])
+                rho = results_r.statistic
+                rp = results_r.pvalue
+                ## Skew
+                skew = round((df_temp[feature].skew()), num_dp)
+                output_df.loc[feature] = [missing, f"{missing_pct}%", skew, dtype, num_unique, round(p, num_dp), round(r, num_dp), round(tau, num_dp), round(rho, num_dp), f"y = {round(slope, num_dp)}x + {round(intercept, num_dp)}", "--", "--"]
                 scatterplot(df_temp, feature, label)
             elif not(pd.api.types.is_numeric_dtype(df_temp[feature])) and not(pd.api.types.is_numeric_dtype(df_temp[label])):
                 # Process C2C relationships
@@ -168,26 +181,25 @@ def bivariate_stats(df, label, num_dp=4):
                 p = results.pvalue
                 dof = results.dof
                 expected_freq = results.expected_freq
-                output_df.loc[feature] = [missing, f"{missing_pct}%", round(p, num_dp), "--", "--", "--", round(X2, num_dp)]
+                output_df.loc[feature] = [missing, f"{missing_pct}%", "--", dtype, num_unique, round(p, num_dp), "--", "--", "--", "--", "--", round(X2, num_dp)]
                 crosstab(df_temp, feature, label)
             else:
                 # Process C2N and N2C relationships
                 if pd.api.types.is_numeric_dtype(df_temp[feature]):
                     num = feature
                     cat = label
+                    skew = round((df_temp[feature].skew()), num_dp)
                 else:
                     num = label
                     cat = feature
-                # print(f"Cat: {cat} | Num: {num}")
+                    skew = "--"
                 groups = df_temp[cat].unique()
-                # print(groups)
                 group_lists = []
                 for g in groups:
                     n_list = df_temp[df_temp[cat] == g][num]
                     group_lists.append(n_list)
                 F, p = stats.f_oneway(*group_lists)
-                # output
-                output_df.loc[feature] = [missing, f"{missing_pct}%", round(p, num_dp), "--", "--", round(F, num_dp), "--"]
+                output_df.loc[feature] = [missing, f"{missing_pct}%", skew, dtype, num_unique, round(p, num_dp), "--", "--", "--", "--", round(F, num_dp), "--"]
                 bar_chart(df_temp, cat, num)
     try:
         return output_df.sort_values(by="p", ascending=True)
