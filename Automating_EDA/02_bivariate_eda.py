@@ -46,6 +46,7 @@ def scatterplot(df, feature, label, num_dp=4, linecolour="darkorange"):
     # sns.scatterplot(x=df[feature], y=df[label])
     sns.regplot(x=df[feature], y=df[label], line_kws={"color": linecolour})
     # Calculate the regression line
+    ## Normality satisfied
     results = stats.linregress(df[feature], df[label])
     slope = results.slope
     slope = round(slope, num_dp)
@@ -57,10 +58,28 @@ def scatterplot(df, feature, label, num_dp=4, linecolour="darkorange"):
     p = round(p, num_dp)
     stderr = results.stderr
     intercept_stderr = results.intercept_stderr
+    ## Other linear regressions
+    results_k = stats.kendalltau(df[feature], df[label])
+    tau = results_k.statistic
+    tau = round(tau, num_dp)
+    tp = results_k.pvalue
+    tp = round(tp, num_dp)
+    results_r = stats.spearmanr(df[feature], df[label])
+    rho = results_r.statistic
+    rho = round(rho, num_dp)
+    rp = results_r.pvalue
+    rp = round(rp, num_dp)
+    ## Skew
+    feature_skew = round((df[feature].skew()), num_dp)
+    label_skew = round((df[label].skew()), num_dp)
+    # Create text string
     text_str = f"y = {slope}x + {intercept}\n"
-    text_str += f"r = {r}\n"
-    text_str += f"p = {p}"
-    # Annotations
+    text_str += f"r = {r}, p = {p}\n"
+    text_str += f"τ = {tau}, p = {tp}\n"
+    text_str += f"ρ = {rho}, p = {rp}\n"
+    text_str += f"{feature} skew = {feature_skew}\n"
+    text_str += f"{label} skew = {label_skew}"
+    # Add annotations
     plt.text(0.95, 0.2, text_str, fontsize=12, transform=plt.gcf().transFigure)
     # Show plot
     plt.show()
@@ -96,6 +115,7 @@ def bar_chart(df, feature, label, num_dp=4):
         group_lists.append(n_list)
     F, p = stats.f_oneway(*group_lists)
     F, p = round(F, num_dp), round(p, num_dp)
+    # Create text string
     text_str = f"F: {F}\n"
     text_str += f"p: {p}"
     # If there are too many feature groups, print x labels vertically
@@ -135,6 +155,7 @@ def crosstab(df, feature, label, num_dp=4):
     dof = results.dof
     dof = round(dof, num_dp)
     expected_freq = results.expected_freq
+    # Create text string
     text_str = f"X2: {X2}\n"
     text_str += f"p: {p}\n"
     text_str += f"dof: {dof}"
