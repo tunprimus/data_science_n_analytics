@@ -62,7 +62,26 @@ def basic_wrangling(df, features=[], missing_threshold=0.95, unique_threshold=0.
 
 ### Date and Time Management
 
+def parse_date(df, features=[], days_to_today=False, drop_date=True, messages=True):
+    import pandas as pd
+    from datetime import datetime as pydt
 
+    all_cols = df.columns
+    for feat in features:
+        if feat in all_cols:
+            df[feat] = pd.to_datetime(df[feat])
+            df[f"{feat}_year"] = df[feat].dt.year
+            df[f"{feat}_month"] = df[feat].dt.month
+            df[f"{feat}_day"] = df[feat].dt.day
+            df[f"{feat}_weekday"] = df[feat].dt.day_name()
+            if days_to_today:
+                df[f"{feat}_days_until_today"] = (pydt.today() - df[feat]).dt.days
+            if drop_date:
+                df.drop(columns=[feat], inplace=True)
+        else:
+            if messages:
+                print(f"The feature \'{feat}\' does not exist as spelled in the DataFrame provided.")
+    return df
 
 ### Bin Low Count Groups Values
 
@@ -118,3 +137,6 @@ basic_wrangling(df_insurance)
 basic_wrangling(df_nba_salaries)
 basic_wrangling(df_airbnb)
 basic_wrangling(df_airline_satisfaction)
+
+parse_date(df_airbnb, features=["last_review"])
+parse_date(df_airbnb, features=["last_review"], days_to_today=True)
