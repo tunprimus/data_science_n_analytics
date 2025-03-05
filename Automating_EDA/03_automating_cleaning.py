@@ -62,13 +62,78 @@ def basic_wrangling(df, features=[], missing_threshold=0.95, unique_threshold=0.
 
 ### Date and Time Management
 
+def can_convert_to_datetime(df, col_list=[], messages=True):
+    import pandas as pd
+    import numpy as np
+    from pandas.api.types import is_datetime64_any_dtype as is_datetime
+
+    length_col_list = len(col_list)
+    # Define type of return object
+    if length_col_list == 1:
+        result = []
+    else:
+        result = {}
+    # Determine how many columns to use in DataFrame
+    if length_col_list == 0:
+        columns_to_check = df.columns
+    else:
+        columns_to_check = df.columns[df.columns.isin(col_list)]
+    print(columns_to_check)
+    # Check only columns with dtype of object
+    for col in columns_to_check:
+        # result = []
+        if df[col].dtype == "object":
+            can_be_datetime = False
+            try:
+                df_flt_tmp = df[col].astype(np.float64)
+                can_be_datetime = False
+            except:
+                try:
+                    df_dt_tmp = pd.to_datetime(df[col])
+                    can_be_datetime = is_datetime(df_dt_tmp)
+                except:
+                    pass
+            if messages:
+                print(f"Can convert {col} to datetime? {can_be_datetime}")
+            if length_col_list == 1:
+                result.append(can_be_datetime)
+            else:
+                result[col] = can_be_datetime
+    return result
+
+
+def convert_to_datetime(df, messages=True):
+    import pandas as pd
+    import numpy as np
+    import sys
+    from pandas.api.types import is_datetime64_any_dtype as is_datetime
+
+    for col in df.columns[df.dtypes == "object"]:
+        try:
+            df_dt_tmp = pd.to_datetime(df[col])
+            try:
+                df_flt_tmp = df[col].astype(np.float64)
+                if messages:
+                    print(f"Warning, NOT converting column '{col}', because it is ALSO convertible to float64.", file=sys.stderr)
+            except:
+                df[col] = df_dt_tmp
+                if messages:
+                    print(f"FYI, converted column '{col}' to datetime.", file=sys.stderr)
+                    print(f"Is '{df[col]}' now datetime? {is_datetime(df[col])}")
+        # Cannot convert some elements of the column to datetime...
+        except:
+            pass
+    return df
+
+
 def parse_date(df, features=[], days_to_today=False, drop_date=True, messages=True):
     import pandas as pd
     from datetime import datetime as pydt
+    from pandas.api.types import is_datetime64_any_dtype as is_datetime
 
     all_cols = df.columns
     for feat in features:
-        if feat in all_cols:
+        if feat in all_cols and is_datetime(df[feat]):
             df[feat] = pd.to_datetime(df[feat])
             df[f"{feat}_year"] = df[feat].dt.year
             df[f"{feat}_month"] = df[feat].dt.month
@@ -137,6 +202,12 @@ basic_wrangling(df_insurance)
 basic_wrangling(df_nba_salaries)
 basic_wrangling(df_airbnb)
 basic_wrangling(df_airline_satisfaction)
+
+can_convert_to_datetime(df_airbnb)
+can_convert_to_datetime(df_airbnb, col_list=["name"])
+can_convert_to_datetime(df_airbnb, col_list=["name", "last_review", "host_name"])
+
+convert_to_datetime(df_airbnb)
 
 parse_date(df_airbnb, features=["last_review"])
 parse_date(df_airbnb, features=["last_review"], days_to_today=True)
