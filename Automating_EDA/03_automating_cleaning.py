@@ -226,6 +226,38 @@ def parse_date(df, features=[], days_to_today=False, drop_date=True, messages=Tr
 ### Bin Low Count Groups Values
 
 
+def bin_categories(df, features=[], cutoff=0.05, replace_with="Other", messages=True):
+    """
+    Bins low count groups values into one category
+
+    Parameters
+    ----------
+    df : pandas DataFrame
+        DataFrame to clean
+    features : list of str, default []
+        Columns to consider for binning
+    cutoff : float, default 0.05
+        Proportion of total samples to define low count groups
+    replace_with : str, default 'Other'
+        Value to replace low count groups with
+    messages : bool, default True
+        If `True`, print messages indicating which columns were cleaned
+
+    Returns
+    -------
+    df : pandas DataFrame
+        DataFrame with low count groups binned
+    """
+    import pandas as pd
+    for feat in features:
+        if feat in df.columns:
+            if not pd.api.types.is_numeric_dtype(df[feat]):
+                other_list = df[feat].value_counts()[(df[feat].value_counts() / df.shape[0]) < cutoff].index
+                df.loc[df[feat].isin(other_list), feat] = replace_with
+        else:
+            if messages:
+                print(f"The feature \'{feat}\' does not exist in the DataFrame provided. No binning performed.")
+    return df
 
 
 ## Outliers
@@ -292,5 +324,8 @@ convert_to_datetime(df_airbnb)
 
 parse_date(df_airbnb, features=["last_review"])
 parse_date(df_airbnb, features=["last_review"], days_to_today=True)
+
+
+bin_categories(df_airbnb, features=["neighbourhood"], cutoff=0.025)
 
 
