@@ -104,7 +104,6 @@ def can_convert_dataframe_to_datetime(df, col_list=[], return_result=True, messa
         columns_to_check = df.columns
     else:
         columns_to_check = df.columns[df.columns.isin(col_list)]
-        print(columns_to_check)
     # Check only columns with dtype of object
     for col in columns_to_check:
         # result = []
@@ -130,52 +129,30 @@ def can_convert_dataframe_to_datetime(df, col_list=[], return_result=True, messa
         return result
 
 
-def can_convert_value_to_datetime(val, messages=False):
+
+def batch_convert_to_datetime(df, split_datetime=True, add_hr_min_sec=False, days_to_today=False, drop_date=True, messages=True):
     """
-    Check if a value can be converted to datetime format.
-
-    Parameters
-    ----------
-    val : value to check
-    messages : bool, default False
-        If `True`, print messages indicating whether the value can be converted to datetime format.
-
-    Returns
-    -------
-    can_be_datetime : bool
-        Whether the value can be converted to datetime format.
-    """
-    from pandas.api.types import is_datetime64_any_dtype as is_datetime
-    try:
-        df_dt_tmp = pd.to_datetime(val)
-        try:
-            df_flt_tmp = val.astype(np.float64)
-            can_be_datetime = False
-        except:
-            can_be_datetime = is_datetime(df_dt_tmp)
-    except:
-        can_be_datetime = False
-    if messages:
-        print(f"Can convert {val} to datetime? {can_be_datetime}")
-    return can_be_datetime
-
-
-
-def convert_to_datetime(df, messages=True):
-    """
-    Convert columns of object dtype to datetime, if possible.
+    Convert object columns in a DataFrame to datetime format if possible.
 
     Parameters
     ----------
     df : pandas DataFrame
-        DataFrame to check
+        DataFrame to convert
+    split_datetime : bool, default True
+        If `True`, split datetime columns into separate columns for year, month, day and weekday.
+    add_hr_min_sec : bool, default False
+        If `True`, add separate columns for hour, minute and second.
+    days_to_today : bool, default False
+        If `True`, add a column with the number of days to today.
+    drop_date : bool, default True
+        If `True`, drop the original column after conversion.
     messages : bool, default True
-        If `True`, print messages indicating which columns were converted to datetime format.
+        If `True`, print messages indicating which columns were converted.
 
     Returns
     -------
     df : pandas DataFrame
-        DataFrame with datetime columns, if possible
+        DataFrame with converted datetime columns.
     """
     import pandas as pd
     import numpy as np
@@ -191,6 +168,20 @@ def convert_to_datetime(df, messages=True):
                     print(f"Warning, NOT converting column '{col}', because it is ALSO convertible to float64.", file=sys.stderr)
             except:
                 df[col] = df_dt_tmp
+                if split_datetime:
+                    df[f"{col}_datetime"] = df[col]
+                    df[f"{col}_year"] = df[col].dt.year
+                    df[f"{col}_month"] = df[col].dt.month
+                    df[f"{col}_day"] = df[col].dt.day
+                    df[f"{col}_weekday"] = df[col].dt.day_name()
+                if add_hr_min_sec:
+                    df[f"{col}_hour"] = df[col].dt.hour
+                    df[f"{col}_minute"] = df[col].dt.minute
+                    df[f"{col}_second"] = df[col].dt.second
+                if days_to_today:
+                    df[f"{col}_days_to_today"] = (pd.to_datetime("now") - df[col]).dt.days
+                if drop_date:
+                    df.drop(columns=[col], inplace=True)
                 if messages:
                     print(f"FYI, converted column '{col}' to datetime.", file=sys.stderr)
                     print(f"Is '{df[col]}' now datetime? {is_datetime(df[col])}")
@@ -201,26 +192,50 @@ def convert_to_datetime(df, messages=True):
 
 
 def parse_date(df, features=[], days_to_today=False, drop_date=True, messages=True):
+    """
+    Parse specified date features in a DataFrame and extract related information.
+
+    Parameters
+    ----------
+    df : pandas DataFrame
+        DataFrame containing the features to be parsed.
+    features : list, default []
+        List of column names to parse as date features. If empty, no columns are parsed.
+    days_to_today : bool, default False
+        If `True`, calculate the number of days from each date to today's date.
+    drop_date : bool, default True
+        If `True`, drop the original date columns after parsing.
+    messages : bool, default True
+        If `True`, print messages indicating parsing status for each feature.
+
+    Returns
+    -------
+    df : pandas DataFrame
+        DataFrame with parsed date features and additional extracted information.
+    """
     import pandas as pd
     from datetime import datetime as pydt
-    from pandas.api.types import is_datetime64_any_dtype as is_datetime
 
     all_cols = df.columns
     for feat in features:
-        if (feat in all_cols) and (can_convert_value_to_datetime(df[feat])):
-            df[feat] = pd.to_datetime(df[feat])
-            df[f"{feat}_datetime"] = df[feat]
-            df[f"{feat}_year"] = df[feat].dt.year
-            df[f"{feat}_month"] = df[feat].dt.month
-            df[f"{feat}_day"] = df[feat].dt.day
-            df[f"{feat}_weekday"] = df[feat].dt.day_name()
-            if days_to_today:
-                df[f"{feat}_days_until_today"] = (pydt.today() - df[feat]).dt.days
-            if drop_date:
-                df.drop(columns=[feat], inplace=True)
+        if feat in all_cols:
+            try:
+                df[feat] = pd.to_datetime(df[feat])
+                df[f"{feat}_datetime"] = df[feat]
+                df[f"{feat}_year"] = df[feat].dt.year
+                df[f"{feat}_month"] = df[feat].dt.month
+                df[f"{feat}_day"] = df[feat].dt.day
+                df[f"{feat}_weekday"] = df[feat].dt.day_name()
+                if days_to_today:
+                    df[f"{feat}_days_until_today"] = (pydt.today() - df[feat]).dt.days
+                if drop_date:
+                    df.drop(columns=[feat], inplace=True)
+            except:
+                if messages:
+                    print(f"Could not convert feature \'{feat}\' to datetime.")
         else:
             if messages:
-                print(f"The feature \'{feat}\' does not exist as spelled in the DataFrame provided.")
+                print(f"Feature \'{feat}\' does not exist as spelled in the DataFrame provided.")
     return df
 
 ### Bin Low Count Groups Values
@@ -265,7 +280,31 @@ def bin_categories(df, features=[], cutoff=0.05, replace_with="Other", messages=
 
 ### Traditional One-at-a-time Methods
 
-
+def clean_outlier(df, features=[], skew_threshold=1, messages=True):
+    import pandas as pd
+    import numpy as np
+    for feat in features:
+        if feat in df.columns:
+            if pd.api.types.is_numeric_dtype(df[feat]):
+                if len(df[feat].unique()) == 1:
+                    if not all(df[feat].value_counts().index.isin([0, 1])):
+                        # Empirical rule
+                        pass
+                        # Tukey boxplot rule
+                        pass
+                    else:
+                        if messages:
+                            print(f"Feature \'{feat}\' is dummy coded (0, 1) and was ignored.")
+                else:
+                    if messages:
+                        print(f"Feature \'{feat}\' has only one unique value ({df[feat].unique()[0]}).")
+            else:
+                if messages:
+                    print(f"Feature \'{feat}\' is categorical and was ignored.")
+        else:
+            if messages:
+                print(f"Feature \'{feat}\' does not exist in the DataFrame provided. No outlier removal performed.")
+    return df
 
 ### Newer All-at-once Methods Based on Clustering
 
@@ -316,11 +355,8 @@ can_convert_dataframe_to_datetime(df_airbnb, col_list=["name"])[0]
 can_convert_dataframe_to_datetime(df_airbnb, col_list=["last_review"])[0]
 can_convert_dataframe_to_datetime(df_airbnb, col_list=["name", "last_review", "host_name"])
 
-can_convert_value_to_datetime(df_airbnb["name"])
-can_convert_value_to_datetime(df_airbnb["last_review"])
-can_convert_value_to_datetime(df_airbnb["host_id"])
 
-convert_to_datetime(df_airbnb)
+batch_convert_to_datetime(df_airbnb)
 
 parse_date(df_airbnb, features=["last_review"])
 parse_date(df_airbnb, features=["last_review"], days_to_today=True)

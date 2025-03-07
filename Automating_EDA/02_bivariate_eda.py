@@ -221,7 +221,11 @@ def crosstab(df, feature, label, num_dp=4):
     # Annotations
     plt.text(0.95, 0.2, text_str, fontsize=12, transform=plt.gcf().transFigure)
     # Generate heatmap
-    ct_df = pd.DataFrame(np.rint(expected_freq).astype("int64"), columns=contingency_table.columns, index=contingency_table.index)
+    ct_df = pd.DataFrame(
+        np.rint(expected_freq).astype("int64"),
+        columns=contingency_table.columns,
+        index=contingency_table.index,
+    )
     sns.heatmap(ct_df, annot=True, fmt="d", cmap="coolwarm")
     # Show plot
     plt.show()
@@ -250,19 +254,36 @@ def bivariate_stats(df, label, num_dp=4):
     import seaborn as sns
     from scipy import stats
 
-    output_df = pd.DataFrame(columns=["missing", "missing_%", "skew", "type", "num_unique", "p", "r", "tau", "rho", "y = m(x) + b", "F", "X2"])
+    output_df = pd.DataFrame(
+        columns=[
+            "missing",
+            "missing_%",
+            "skew",
+            "type",
+            "num_unique",
+            "p",
+            "r",
+            "tau",
+            "rho",
+            "y = m(x) + b",
+            "F",
+            "X2",
+        ]
+    )
 
     for feature in df.columns:
         if feature != label:
             # Calculate statistics that apply to all datatypes
             df_temp = df[[feature, label]].copy()
             df_temp = df_temp.dropna().copy()
-            missing = (df.shape[0] - df_temp.shape[0])
-            buffer = ((df.shape[0] - df_temp.shape[0]) / df.shape[0])
+            missing = df.shape[0] - df_temp.shape[0]
+            buffer = (df.shape[0] - df_temp.shape[0]) / df.shape[0]
             missing_pct = round(buffer * 100, num_dp)
             dtype = df_temp[feature].dtype
             num_unique = df_temp[feature].nunique()
-            if (pd.api.types.is_numeric_dtype(df_temp[feature])) and (pd.api.types.is_numeric_dtype(df_temp[label])):
+            if (pd.api.types.is_numeric_dtype(df_temp[feature])) and (
+                pd.api.types.is_numeric_dtype(df_temp[label])
+            ):
                 # Process N2N relationships
                 ## Pearson linear regression
                 results_p = stats.linregress(df_temp[feature], df_temp[label])
@@ -287,9 +308,24 @@ def bivariate_stats(df, label, num_dp=4):
                 rp = results_r.pvalue
                 ## Skew
                 skew = round((df_temp[feature].skew()), num_dp)
-                output_df.loc[feature] = [missing, f"{missing_pct}%", skew, dtype, num_unique, p, r, tau, rho, f"y = {slope}x + {intercept}", "--", "--"]
+                output_df.loc[feature] = [
+                    missing,
+                    f"{missing_pct}%",
+                    skew,
+                    dtype,
+                    num_unique,
+                    p,
+                    r,
+                    tau,
+                    rho,
+                    f"y = {slope}x + {intercept}",
+                    "--",
+                    "--",
+                ]
                 scatterplot(df_temp, feature, label)
-            elif not(pd.api.types.is_numeric_dtype(df_temp[feature])) and not(pd.api.types.is_numeric_dtype(df_temp[label])):
+            elif not (pd.api.types.is_numeric_dtype(df_temp[feature])) and not (
+                pd.api.types.is_numeric_dtype(df_temp[label])
+            ):
                 # Process C2C relationships
                 contingency_table = pd.crosstab(df_temp[feature], df_temp[label])
                 results = stats.chi2_contingency(contingency_table)
@@ -299,7 +335,20 @@ def bivariate_stats(df, label, num_dp=4):
                 p = round(p, num_dp)
                 dof = results.dof
                 expected_freq = results.expected_freq
-                output_df.loc[feature] = [missing, f"{missing_pct}%", "--", dtype, num_unique, p, "--", "--", "--", "--", "--", X2]
+                output_df.loc[feature] = [
+                    missing,
+                    f"{missing_pct}%",
+                    "--",
+                    dtype,
+                    num_unique,
+                    p,
+                    "--",
+                    "--",
+                    "--",
+                    "--",
+                    "--",
+                    X2,
+                ]
                 crosstab(df_temp, feature, label)
             else:
                 # Process C2N and N2C relationships
@@ -318,13 +367,25 @@ def bivariate_stats(df, label, num_dp=4):
                     group_lists.append(n_list)
                 F, p = stats.f_oneway(*group_lists)
                 F, p = round(F, num_dp), round(p, num_dp)
-                output_df.loc[feature] = [missing, f"{missing_pct}%", skew, dtype, num_unique, p, "--", "--", "--", "--", F, "--"]
+                output_df.loc[feature] = [
+                    missing,
+                    f"{missing_pct}%",
+                    skew,
+                    dtype,
+                    num_unique,
+                    p,
+                    "--",
+                    "--",
+                    "--",
+                    "--",
+                    F,
+                    "--",
+                ]
                 bar_chart(df_temp, cat, num)
     try:
         return output_df.sort_values(by="p", ascending=True)
     except Exception:
         return output_df
-
 
 
 scatterplot(df_insurance, "age", "charges")
@@ -337,4 +398,3 @@ crosstab(df_airline_satisfaction, "Class", "satisfaction")
 bivariate_stats(df_insurance, "charges")
 bivariate_stats(df_nba_salaries, "Salary")
 bivariate_stats(df_airline_satisfaction, "satisfaction")
-
