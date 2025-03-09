@@ -24,6 +24,151 @@ df_airbnb = pd.read_csv(real_path_to_airbnb_data)
 df_airline_satisfaction = pd.read_csv(real_path_to_airline_data)
 
 
+## Some Constants
+##*********************##
+RANDOM_SEED = 42
+RANDOM_SAMPLE_SIZE = 13
+NUM_DEC_PLACES = 4
+GOLDEN_RATIO = 1.618033989
+
+
+## Some Useful Functions
+##*********************##
+
+def cpu_logical_cores_count():
+    """
+    Return the number of logical cores on the machine.
+
+    The number of logical cores is the number of physical cores times the
+    number of threads that can run on each core (Simultaneous Multithreading,
+    SMT). If the number of logical cores cannot be determined, an exception is
+    raised.
+    """
+    import joblib
+    import multiprocessing
+    import os
+    import psutil
+    import re
+    import subprocess
+    # For Python 2.6+
+    # Using multiprocessing module
+    try:
+        n_log_cores = multiprocessing.cpu_count()
+        if n_log_cores > 0:
+            return n_log_cores
+    except (ImportError, NotImplementedError):
+        pass
+    # Using joblib module
+    try:
+        n_log_cores = joblib.cpu_count()
+        if n_log_cores > 0:
+            return n_log_cores
+    except (ImportError, NotImplementedError):
+        pass
+    # Using psutil module
+    try:
+        n_log_cores = psutil.cpu_count()
+        if n_log_cores > 0:
+            return n_log_cores
+    except (ImportError, AttributeError):
+        pass
+    # Using os module
+    try:
+        n_log_cores = os.cpu_count()
+        if n_log_cores is None:
+            raise NotImplementedError
+        if n_log_cores > 0:
+            return n_log_cores
+    except:
+        pass
+    # Check proc process
+    try:
+        m = re.search(r"(?m)^Cpus_allowed:\s*(.*)$", open("/proc/self/status").read())
+        if m:
+            res = bin(int(m.group(1).replace(",", "")))
+            if res > 0:
+                n_log_cores = res
+                return n_log_cores
+    except IOError:
+        pass
+    # POSIX
+    try:
+        res = int(os.sysconf("SC_NPROCESSORS_ONLN"))
+        if res > 0:
+            n_log_cores = res
+            return n_log_cores
+    except (AttributeError, ValueError):
+        pass
+    # Windows
+    try:
+        res = int(os.environ["NUMBER_OF_PROCESSORS"])
+        if res > 0:
+            n_log_cores = res
+            return n_log_cores
+    except (AttributeError, ValueError):
+        pass
+    # Jython
+    try:
+        from java.lang import Runtime
+        runtime = Runtime.getRuntime()
+        res = runtime.availableProcessors()
+        if res > 0:
+            n_log_cores = res
+            return n_log_cores
+    except ImportError:
+        pass
+    # BSD
+    try:
+        sysctl = subprocess.Popen(["sysctl", "-n", "hw.ncpu"], stdout=subprocess.PIPE)
+        sc_stdout = sysctl.communicate()[0]
+        res = int(sc_stdout)
+        if res > 0:
+            n_log_cores = res
+            return n_log_cores
+    except (OSError, ValueError):
+        pass
+    # Linux
+    try:
+        with (open("/proc/cpuinfo")) as fin:
+            res = fin.read().count("processor\t:")
+            if res > 0:
+                n_log_cores = res
+                return n_log_cores
+    except IOError:
+        pass
+    # Solaris
+    try:
+        pseudo_devices = os.listdir("/dev/pseudo")
+        res = 0
+        for pd in pseudo_devices:
+            if re.match(r"^cpuid@[0-9]+$", pd):
+                res += 1
+        if res > 0:
+            n_log_cores = res
+            return n_log_cores
+    except OSError:
+        pass
+    # Other UNIXes (heuristic)
+    try:
+        try:
+            dmesg = open("/var/run/dmesg.boot").read()
+        except IOError:
+            dmesg_process = subprocess.Popen(["dmesg"], stdout=subprocess.PIPE)
+            dmesg = dmesg_process.communicate()[0]
+        res = 0
+        while "\ncpu" + str(res) + ":" in dmesg:
+            res += 1
+        if res > 0:
+            n_log_cores = res
+            return n_log_cores
+    except OSError:
+        pass
+    raise Exception("Cannot determine number of cores on this system.")
+
+
+LOGICAL_CORES = cpu_logical_cores_count()
+
+
 ## Basic Data Wrangling
 ##*********************##
 
@@ -280,7 +425,7 @@ def bin_categories(df, features=[], cutoff=0.05, replace_with="Other", messages=
 
 ### Traditional One-at-a-time Methods
 
-def clean_outlier(df, features=[], skew_threshold=1, handle_outliers="remove", num_dp=4, messages=True):
+def clean_outlier_per_column(df, features=[], skew_threshold=1, handle_outliers="remove", num_dp=4, messages=True):
     import pandas as pd
     import numpy as np
     from sklearn.experimental import enable_iterative_imputer
@@ -332,7 +477,7 @@ def clean_outlier(df, features=[], skew_threshold=1, handle_outliers="remove", n
                                 df.loc[df[feat] < lo_bound, feat] = np.nan
                                 df.loc[df[feat] > hi_bound, feat] = np.nan
                         if messages:
-                            print(f"Feature \'{feat}\' has {min_count} values below the lower bound ({round(lo_bound, num_dp)}) and {max_count} values above the upper bound ({round(hi_bound, num_dp)}).")
+                            print(f"Feature \'{feat}\' has {min_count} value(s) below the lower bound ({round(lo_bound, num_dp)}) and {max_count} value(s) above the upper bound ({round(hi_bound, num_dp)}).")
                     else:
                         if messages:
                             print(f"Feature \'{feat}\' is dummy coded (0, 1) and was ignored.")
@@ -350,6 +495,105 @@ def clean_outlier(df, features=[], skew_threshold=1, handle_outliers="remove", n
 ### Newer All-at-once Methods Based on Clustering
 
 
+def clean_outlier_by_all_columns(df, drop_percent=0.02, distance_method="manhattan", min_samples=5, num_dp=4, num_cores_for_dbscan=LOGICAL_CORES-1, messages=True):
+    import matplotlib.pyplot as plt
+    import numpy as np
+    import pandas as pd
+    import seaborn as sns
+    import time
+    from sklearn import preprocessing
+    from sklearn.cluster import DBSCAN
+
+    # Clean the DataFrame first
+    num_cols_with_missing_values = df.shape[1] - df.dropna(axis="columns").shape[1]
+    df.dropna(axis="columns", inplace=True)
+    if messages:
+        print(f"{num_cols_with_missing_values} column(s) with missing values dropped.")
+    num_rows_with_missing_values = df.shape[0] - df.dropna(axis="columns").shape[0]
+    df.dropna(inplace=True)
+    if messages:
+        print(f"{num_rows_with_missing_values} row(s) with missing values dropped.")
+    # Handle basic wrangling, binning and outliers
+    df_temp = df.copy()
+    df_temp = bin_categories(df_temp, features=df_temp.columns, messages=False)
+    df_temp = basic_wrangling(df_temp, features=df_temp.columns, messages=False)
+    df_temp = pd.get_dummies(df_temp, drop_first=True)
+    # Normalise the data
+    df_temp = pd.DataFrame(preprocessing.MinMaxScaler().fit_transform(df_temp), columns=df_temp.columns, index=df_temp.index)
+    # Calculate outliers based on a range of eps values
+    outliers_per_eps = []
+    outliers_per_eps_history = {}
+    outliers = df_temp.shape[0]
+    eps_loop = 0
+    counter = 0
+    row_count = df_temp.shape[0]
+    if row_count < 500:
+        INCREMENT_VAL = 0.010
+    elif row_count < 1000:
+        INCREMENT_VAL = 0.025
+    elif row_count < 2000:
+        INCREMENT_VAL = 0.050
+    elif row_count < 10000:
+        INCREMENT_VAL = 0.075
+    elif row_count < 25000:
+        INCREMENT_VAL = 0.100
+    elif row_count < 50000:
+        INCREMENT_VAL = 0.200
+    elif row_count < 100000:
+        INCREMENT_VAL = 0.250
+    elif row_count < 250000:
+        INCREMENT_VAL = 0.350
+    else:
+        INCREMENT_VAL = 0.500
+    db_scan_time_start = time.time_ns()
+    while outliers > 0:
+        loop_start_time = time.time_ns()
+        eps_loop += INCREMENT_VAL
+        db_loop = DBSCAN(eps=eps_loop, metric=distance_method, min_samples=min_samples, n_jobs=num_cores_for_dbscan).fit(df_temp)
+        outliers = np.count_nonzero(db_loop.labels_ == -1)
+        outliers_per_eps.append(outliers)
+        outliers_percent = (outliers / row_count) * 100
+        outliers_per_eps_history[f"{counter}_trial"] = {}
+        outliers_per_eps_history[f"{counter}_trial"]["eps_val"] = round(eps_loop, num_dp)
+        outliers_per_eps_history[f"{counter}_trial"]["outliers"] = outliers
+        outliers_per_eps_history[f"{counter}_trial"]["outliers_percent"] = round(outliers_percent, num_dp)
+        loop_end_time = time.time_ns()
+        loop_time_diff_ns = (loop_end_time - loop_start_time)
+        loop_time_diff_s = (loop_end_time - loop_start_time) / 1000000000
+        outliers_per_eps_history[f"{counter}_trial"]["loop_duration_ns"] = loop_time_diff_ns
+        outliers_per_eps_history[f"{counter}_trial"]["loop_duration_s"] = loop_time_diff_s
+        counter += 1
+        if messages:
+            print(f"eps = {round(eps_loop, num_dp)}, (outliers: {outliers}, percent: {round(outliers_percent, num_dp)}% in {round(loop_time_diff_s, num_dp)}s)")
+    to_drop = min(outliers_per_eps, key=lambda x: abs(x - round((drop_percent * row_count), num_dp)))
+    # Find the optimal eps value
+    eps = (outliers_per_eps.index(to_drop) + 1) * INCREMENT_VAL
+    outliers_per_eps_history["optimal_eps"] = eps
+    db_scan_time_end = time.time_ns()
+    db_scan_time_diff_s = (db_scan_time_end - db_scan_time_start) / 1000000000
+    outliers_per_eps_history["db_scan_duration_s"] = db_scan_time_diff_s
+    if messages:
+        print(f"Optimal eps value: {round(eps, num_dp)}")
+        # print(f"History: {outliers_per_eps_history}")
+        print(f"\nHistory:")
+        for key01, val01 in outliers_per_eps_history.items():
+            if not isinstance(val01, dict):
+                print(f"{key01}: {round(val01, num_dp)}")
+                continue
+            else:
+                print(f"{key01}")
+                for key02, val02 in val01.items():
+                    print(f"{key02}: {round(val02, num_dp)}")
+                print("*********************")
+            print()
+    db = DBSCAN(eps=eps, metric=distance_method, min_samples=min_samples, n_jobs=num_cores_for_dbscan).fit(df_temp)
+    df["outlier"] = db.labels_
+    if messages:
+        print(f"{df[df['outlier'] == -1].shape[0]} row(s) of outliers found for removal.")
+    # Drop rows that are outliers
+    df = df[df["outlier"] != -1]
+    # df.drop("outlier", axis="columns", inplace=True)
+    return df
 
 
 
@@ -406,8 +650,16 @@ parse_column_as_date(df_airbnb, features=["last_review"], days_to_today=True)
 bin_categories(df_airbnb, features=["neighbourhood"], cutoff=0.025)
 
 
-clean_outlier(df_insurance, features=df_insurance.columns)
+clean_outlier_per_column(df_insurance, features=df_insurance.columns)
 df_insurance.sort_values(by=["bmi"], ascending=False).head()
-df_ins_ohne_outliers = clean_outlier(df_insurance, features=df_insurance.columns)
-df_ins_ohne_outliers.sort_values(by=["bmi"], ascending=False).head()
+df_ins_without_outliers = clean_outlier_per_column(df_insurance, features=df_insurance.columns)
+df_ins_without_outliers.sort_values(by=["bmi"], ascending=False).head()
 
+
+df_insurance_ohne_outliers = clean_outlier_by_all_columns(df_insurance)
+df_insurance_ohne_outliers.head()
+df_insurance_ohne_outliers.sample(RANDOM_SAMPLE_SIZE)
+
+df_nba_salaries_ohne_outliers = clean_outlier_by_all_columns(df_nba_salaries)
+df_airbnb_ohne_outliers = clean_outlier_by_all_columns(df_airbnb)
+df_airline_satisfaction_ohne_outliers = clean_outlier_by_all_columns(df_airline_satisfaction)
