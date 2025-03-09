@@ -191,7 +191,7 @@ def batch_convert_to_datetime(df, split_datetime=True, add_hr_min_sec=False, day
     return df
 
 
-def parse_date(df, features=[], days_to_today=False, drop_date=True, messages=True):
+def parse_column_as_date(df, features=[], days_to_today=False, drop_date=True, messages=True):
     """
     Parse specified date features in a DataFrame and extract related information.
 
@@ -280,18 +280,59 @@ def bin_categories(df, features=[], cutoff=0.05, replace_with="Other", messages=
 
 ### Traditional One-at-a-time Methods
 
-def clean_outlier(df, features=[], skew_threshold=1, messages=True):
+def clean_outlier(df, features=[], skew_threshold=1, handle_outliers="remove", num_dp=4, messages=True):
     import pandas as pd
     import numpy as np
+    from sklearn.experimental import enable_iterative_imputer
+    from sklearn.impute import IterativeImputer
     for feat in features:
         if feat in df.columns:
             if pd.api.types.is_numeric_dtype(df[feat]):
-                if len(df[feat].unique()) == 1:
+                if len(df[feat].unique()) != 1:
                     if not all(df[feat].value_counts().index.isin([0, 1])):
-                        # Empirical rule
-                        pass
+                        skew = df[feat].skew()
                         # Tukey boxplot rule
-                        pass
+                        if abs(skew) > skew_threshold:
+                            q1 = df[feat].quantile(0.25)
+                            q3 = df[feat].quantile(0.75)
+                            iqr = q3 - q1
+                            lo_bound = q1 - 1.5 * iqr
+                            hi_bound = q3 + 1.5 * iqr
+                        # Empirical rule
+                        else:
+                            lo_bound = df[feat].mean() - (3 * df[feat].std())
+                            hi_bound = df[feat].mean() + (3 * df[feat].std())
+                        # Get the number of outlier data points
+                        min_count = df.loc[df[feat] < lo_bound, feat].shape[0]
+                        max_count = df.loc[df[feat] > hi_bound, feat].shape[0]
+                        if (min_count > 0) or (max_count > 0):
+                            # Remove rows with the outliers
+                            if handle_outliers == "remove":
+                                df = df[(df[feat] >= lo_bound) & (df[feat] <= hi_bound)]
+                            # Replace outliers with min-max cutoff
+                            elif handle_outliers == "replace":
+                                df.loc[df[feat] < lo_bound, feat] = lo_bound
+                                df.loc[df[feat] > hi_bound, feat] = hi_bound
+                            # Impute with linear regression after deleting
+                            elif handle_outliers == "impute":
+                                df.loc[df[feat] < lo_bound, feat] = np.nan
+                                df.loc[df[feat] > hi_bound, feat] = np.nan
+                                imputer = IterativeImputer(max_iter=10)
+                                df_temp = df.copy()
+                                df_temp = bin_categories(df_temp, features=df_temp.columns, messages=False)
+                                df_temp = basic_wrangling(df_temp, features=df_temp.columns, messages=False)
+                                df_temp = pd.get_dummies(df_temp, drop_first=True)
+                                df_temp = pd.DataFrame(imputer.fit_transform(df_temp), columns=df_temp.columns, index=df_temp.index, dtype="float")
+                                df_temp.columns = df_temp.columns.get_level_values(0)
+                                df_temp.index = df_temp.index.astype("int64")
+                                # Save only the column from df_temp being iterated on
+                                df[feat] = df_temp[feat]
+                            # Replace with null
+                            elif handle_outliers == "null":
+                                df.loc[df[feat] < lo_bound, feat] = np.nan
+                                df.loc[df[feat] > hi_bound, feat] = np.nan
+                        if messages:
+                            print(f"Feature \'{feat}\' has {min_count} values below the lower bound ({round(lo_bound, num_dp)}) and {max_count} values above the upper bound ({round(hi_bound, num_dp)}).")
                     else:
                         if messages:
                             print(f"Feature \'{feat}\' is dummy coded (0, 1) and was ignored.")
@@ -358,10 +399,15 @@ can_convert_dataframe_to_datetime(df_airbnb, col_list=["name", "last_review", "h
 
 batch_convert_to_datetime(df_airbnb)
 
-parse_date(df_airbnb, features=["last_review"])
-parse_date(df_airbnb, features=["last_review"], days_to_today=True)
+parse_column_as_date(df_airbnb, features=["last_review"])
+parse_column_as_date(df_airbnb, features=["last_review"], days_to_today=True)
 
 
 bin_categories(df_airbnb, features=["neighbourhood"], cutoff=0.025)
 
+
+clean_outlier(df_insurance, features=df_insurance.columns)
+df_insurance.sort_values(by=["bmi"], ascending=False).head()
+df_ins_ohne_outliers = clean_outlier(df_insurance, features=df_insurance.columns)
+df_ins_ohne_outliers.sort_values(by=["bmi"], ascending=False).head()
 
