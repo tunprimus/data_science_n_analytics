@@ -702,15 +702,20 @@ def skew_correct(df, feature, max_power=103, messages=True):
     FIG_DPI = 72
 
     # rcParams for Plotting
-    plt.style.use("seaborn")
     plt.rcParams["figure.figsize"] = FIG_SIZE
     plt.rcParams["figure.dpi"] = FIG_DPI
+
+    # Check to use only numerical features
+    if not pd.api.types.is_numeric_dtype(df[feature]):
+        if messages:
+            print(f"The feature \'{feature}\' is not numerical. No transformation performed.")
+        return df
 
     # In case the dataset is too big, use a subsample
     df_temp = df.copy()
     if df_temp.memory_usage(deep=True).sum() > 1_000_000:
         df_temp = df.sample(frac=round((5000 / df_temp.shape[0]), 2))
-
+    # Identify the proper transformation exponent
     exp_val = 1
     skew = df[feature].skew()
     if messages:
@@ -723,11 +728,34 @@ def skew_correct(df, feature, max_power=103, messages=True):
             skew = np.power(df_temp[feature], exp_val).skew()
     if messages:
         print(f"Final skew: {round(skew, 5)} (using exponent: {round(exp_val, 5)})")
+    # Make the transformed version of the feature in the df DataFrame
+    if (skew > -0.1) and (skew < 0.1):
+        if skew > 0:
+            corrected = np.power(df[feature], 1/round(exp_val, 3))
+            name = f"{feature}_1/{round(exp_val, 3)}"
+        else:
+            corrected = np.power(df[feature], round(exp_val, 3))
+            name = f"{feature}_{round(exp_val, 3)}"
+        # Add the corrected feature to the original DataFrame
+        df[name] = corrected
+    else:
+        name = f"{feature}_binary"
+        df[name] = df[feature]
+        if skew > 0:
+            df.loc[df[name] == df[name].value_counts().index[0], name] = 0
+            df.loc[df[name] != df[name].value_counts().index[0], name] = 1
+        else:
+            df.loc[df[name] == df[name].value_counts().index[0], name] = 1
+            df.loc[df[name] != df[name].value_counts().index[0], name] = 0
+        if messages:
+            print(f"The feature {feature} could not be transformed into a normal distribution.")
+            print("Instead, it has been transformed into a binary (0/1) distribution.")
+    # Plot visualisations
     if messages:
         fig, axs = plt.subplots(1, 2, figsize=FIG_SIZE, dpi=FIG_DPI)
         sns.despine(left=True)
         sns.histplot(df_temp[feature], color="b", ax=axs[0], kde=True)
-        if (skew > -1) and (skew < 1):
+        if (skew > -0.1) and (skew < 0.1):
             if skew > 0:
                 corrected = np.power(df_temp[feature], 1/round(exp_val, 3))
             else:
@@ -746,6 +774,7 @@ def skew_correct(df, feature, max_power=103, messages=True):
         plt.setp(axs, yticks=[])
         plt.tight_layout()
         plt.show()
+    return df
 
 
 
