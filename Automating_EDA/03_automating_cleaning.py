@@ -495,7 +495,7 @@ def clean_outlier_per_column(df, features=[], skew_threshold=1, handle_outliers=
 ### Newer All-at-once Methods Based on Clustering
 
 
-def clean_outlier_by_all_columns(df, drop_percent=0.013, distance_method="manhattan", min_samples=5, num_dp=4, num_cores_for_dbscan=LOGICAL_CORES-1, messages=True):
+def clean_outlier_by_all_columns(df, drop_proportion=0.013, distance_method="manhattan", min_samples=5, num_dp=4, num_cores_for_dbscan=LOGICAL_CORES-2 if LOGICAL_CORES > 3 else 1, messages=True):
     import matplotlib.pyplot as plt
     import numpy as np
     import pandas as pd
@@ -574,7 +574,7 @@ def clean_outlier_by_all_columns(df, drop_percent=0.013, distance_method="manhat
     outliers_per_eps_history["db_scan_duration_s"] = db_scan_time_diff_s
     outliers_per_eps_history["distance_metric_used"] = distance_method
     outliers_per_eps_history["min_samples_used"] = min_samples
-    outliers_per_eps_history["drop_percent_used"] = drop_percent
+    outliers_per_eps_history["drop_proportion_used"] = drop_proportion
     outliers_per_eps_history["timestamp"] = pd.Timestamp.now()
     if messages:
         print(f"Optimal eps value: {round(eps, num_dp)}")
@@ -597,6 +597,11 @@ def clean_outlier_by_all_columns(df, drop_percent=0.013, distance_method="manhat
     df["outlier"] = db.labels_
     if messages:
         print(f"{df[df['outlier'] == -1].shape[0]} row(s) of outliers found for removal.")
+        sns.lineplot(x=range(1, len(outliers_per_eps) + 1), y=outliers_per_eps)
+        sns.scatterplot(x=[eps/INCREMENT_VAL], y=[to_drop])
+        plt.xlabel(f"eps (divided by {INCREMENT_VAL})")
+        plt.ylabel("Number of outliers")
+        plt.show()
     # Drop rows that are outliers
     df = df[df["outlier"] != -1]
     # df.drop("outlier", axis="columns", inplace=True)
