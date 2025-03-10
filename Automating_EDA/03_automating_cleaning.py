@@ -30,6 +30,10 @@ RANDOM_SEED = 42
 RANDOM_SAMPLE_SIZE = 13
 NUM_DEC_PLACES = 4
 GOLDEN_RATIO = 1.618033989
+FIG_WIDTH = 20
+FIG_HEIGHT = FIG_WIDTH / GOLDEN_RATIO
+FIG_SIZE = (FIG_WIDTH, FIG_HEIGHT)
+FIG_DPI = 72
 
 
 ## Some Useful Functions
@@ -426,10 +430,41 @@ def bin_categories(df, features=[], cutoff=0.05, replace_with="Other", messages=
 ### Traditional One-at-a-time Methods
 
 def clean_outlier_per_column(df, features=[], skew_threshold=1, handle_outliers="remove", num_dp=4, messages=True):
+    """
+    Clean outliers from a column in a DataFrame
+
+    Parameters
+    ----------
+    df : pandas DataFrame
+        DataFrame to clean
+    features : list of str, default []
+        Columns to consider for outlier cleaning
+    skew_threshold : float, default 1
+        Threshold to determine if a column is skewed
+    handle_outliers : str, default 'remove'
+        How to handle outliers. Options are 'remove', 'replace', 'impute', 'null'
+    num_dp : int, default 4
+        Number of decimal places to round to
+    messages : bool, default True
+        If `True`, print messages indicating which columns were cleaned
+
+    Returns
+    -------
+    df : pandas DataFrame
+        DataFrame with outliers cleaned
+    """
     import pandas as pd
     import numpy as np
     from sklearn.experimental import enable_iterative_imputer
     from sklearn.impute import IterativeImputer
+    # Monkey patching NumPy >= 1.24 in order to successfully import model from sklearn and other libraries
+    np.float = np.float64
+    np.int = np.int_
+    np.object = np.object_
+    np.bool = np.bool_
+
+    pd.set_option("mode.copy_on_write", True)
+
     for feat in features:
         if feat in df.columns:
             if pd.api.types.is_numeric_dtype(df[feat]):
@@ -496,6 +531,31 @@ def clean_outlier_per_column(df, features=[], skew_threshold=1, handle_outliers=
 
 
 def clean_outlier_by_all_columns(df, drop_proportion=0.013, distance_method="manhattan", min_samples=5, num_dp=4, num_cores_for_dbscan=LOGICAL_CORES-2 if LOGICAL_CORES > 3 else 1, messages=True):
+    """
+    Clean outliers from a DataFrame based on a range of eps values.
+
+    Parameters
+    ----------
+    df : pandas DataFrame
+        DataFrame to clean
+    drop_proportion : float, default 0.013
+        Proportion of total samples to define outliers
+    distance_method : str, default "manhattan"
+        Distance method to use in DBSCAN
+    min_samples : int, default 5
+        Minimum samples to form a dense region
+    num_dp : int, default 4
+        Number of decimal places to round to
+    num_cores_for_dbscan : int, default LOGICAL_CORES-2 if LOGICAL_CORES > 3 else 1
+        Number of cores to use in DBSCAN
+    messages : bool, default True
+        If `True`, print messages indicating which columns were cleaned
+
+    Returns
+    -------
+    df : pandas DataFrame
+        DataFrame with outliers cleaned
+    """
     import matplotlib.pyplot as plt
     import numpy as np
     import pandas as pd
@@ -503,6 +563,14 @@ def clean_outlier_by_all_columns(df, drop_proportion=0.013, distance_method="man
     import time
     from sklearn import preprocessing
     from sklearn.cluster import DBSCAN
+
+    # Monkey patching NumPy >= 1.24 in order to successfully import model from sklearn and other libraries
+    np.float = np.float64
+    np.int = np.int_
+    np.object = np.object_
+    np.bool = np.bool_
+
+    pd.set_option("mode.copy_on_write", True)
 
     # Clean the DataFrame first
     num_cols_with_missing_values = df.shape[1] - df.dropna(axis="columns").shape[1]
@@ -613,6 +681,71 @@ def clean_outlier_by_all_columns(df, drop_proportion=0.013, distance_method="man
 ##*********************##
 
 
+def skew_correct(df, feature, max_power=103, messages=True):
+    import matplotlib.pyplot as plt
+    import numpy as np
+    import pandas as pd
+    import seaborn as sns
+    from os.path import realpath as realpath
+
+    # Monkey patching NumPy >= 1.24 in order to successfully import model from sklearn and other libraries
+    np.float = np.float64
+    np.int = np.int_
+    np.object = np.object_
+    np.bool = np.bool_
+
+    pd.set_option("mode.copy_on_write", True)
+    GOLDEN_RATIO = 1.618033989
+    FIG_WIDTH = 20
+    FIG_HEIGHT = FIG_WIDTH / GOLDEN_RATIO
+    FIG_SIZE = (FIG_WIDTH, FIG_HEIGHT)
+    FIG_DPI = 72
+
+    # rcParams for Plotting
+    plt.style.use("seaborn")
+    plt.rcParams["figure.figsize"] = FIG_SIZE
+    plt.rcParams["figure.dpi"] = FIG_DPI
+
+    # In case the dataset is too big, use a subsample
+    df_temp = df.copy()
+    if df_temp.memory_usage(deep=True).sum() > 1_000_000:
+        df_temp = df.sample(frac=round((5000 / df_temp.shape[0]), 2))
+
+    exp_val = 1
+    skew = df[feature].skew()
+    if messages:
+        print(f"Starting skew: {round(skew, 5)}")
+    while (round(skew, 2) != 0) and (exp_val <= max_power):
+        exp_val += 0.01
+        if skew > 0:
+            skew = np.power(df_temp[feature], 1/exp_val).skew()
+        else:
+            skew = np.power(df_temp[feature], exp_val).skew()
+    if messages:
+        print(f"Final skew: {round(skew, 5)} (using exponent: {round(exp_val, 5)})")
+    if messages:
+        fig, axs = plt.subplots(1, 2, figsize=FIG_SIZE, dpi=FIG_DPI)
+        sns.despine(left=True)
+        sns.histplot(df_temp[feature], color="b", ax=axs[0], kde=True)
+        if (skew > -1) and (skew < 1):
+            if skew > 0:
+                corrected = np.power(df_temp[feature], 1/round(exp_val, 3))
+            else:
+                corrected = np.power(df_temp[feature], round(exp_val, 3))
+            df_temp["corrected"] = corrected
+            sns.histplot(df_temp["corrected"], color="g", ax=axs[1], kde=True)
+        else:
+            df_temp["corrected"] = df_temp[feature]
+            if skew > 0:
+                df_temp.loc[df_temp["corrected"] == df_temp["corrected"].min(), "corrected"] = 0
+                df_temp.loc[df_temp["corrected"] > df_temp["corrected"].min(), "corrected"] = 1
+            else:
+                df_temp.loc[df_temp["corrected"] == df_temp["corrected"].max(), "corrected"] = 1
+                df_temp.loc[df_temp["corrected"] < df_temp["corrected"].max(), "corrected"] = 0
+            sns.countplot(data=df_temp, x="corrected", color="g", ax=axs[1])
+        plt.setp(axs, yticks=[])
+        plt.tight_layout()
+        plt.show()
 
 
 
@@ -675,3 +808,12 @@ df_insurance_ohne_outliers.sample(RANDOM_SAMPLE_SIZE)
 df_nba_salaries_ohne_outliers = clean_outlier_by_all_columns(df_nba_salaries)
 df_airbnb_ohne_outliers = clean_outlier_by_all_columns(df_airbnb)
 df_airline_satisfaction_ohne_outliers = clean_outlier_by_all_columns(df_airline_satisfaction)
+
+
+skew_correct(df_insurance, "charges")
+skew_correct(df_nba_salaries, "Salary")
+skew_correct(df_airbnb, "price")
+skew_correct(df_airbnb, "number_of_reviews")
+skew_correct(df_airline_satisfaction, "Flight Distance")
+skew_correct(df_airline_satisfaction, "Departure Delay in Minutes")
+skew_correct(df_airline_satisfaction, "Arrival Delay in Minutes")
