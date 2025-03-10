@@ -711,13 +711,20 @@ def skew_correct(df, feature, max_power=103, messages=True):
             print(f"The feature \'{feature}\' is not numerical. No transformation performed.")
         return df
 
+    # Clean out missing data
+    df = basic_wrangling(df, messages=False)
+    if messages:
+        print(f"{df.shape[0] - df.dropna().shape[0]} row(s) with missing values dropped.")
+    df.dropna(inplace=True)
+
     # In case the dataset is too big, use a subsample
     df_temp = df.copy()
     if df_temp.memory_usage(deep=True).sum() > 1_000_000:
         df_temp = df.sample(frac=round((5000 / df_temp.shape[0]), 2))
+
     # Identify the proper transformation exponent
     exp_val = 1
-    skew = df[feature].skew()
+    skew = df_temp[feature].skew()
     if messages:
         print(f"Starting skew: {round(skew, 5)}")
     while (round(skew, 2) != 0) and (exp_val <= max_power):
@@ -728,6 +735,7 @@ def skew_correct(df, feature, max_power=103, messages=True):
             skew = np.power(df_temp[feature], exp_val).skew()
     if messages:
         print(f"Final skew: {round(skew, 5)} (using exponent: {round(exp_val, 5)})")
+
     # Make the transformed version of the feature in the df DataFrame
     if (skew > -0.1) and (skew < 0.1):
         if skew > 0:
@@ -750,6 +758,7 @@ def skew_correct(df, feature, max_power=103, messages=True):
         if messages:
             print(f"The feature {feature} could not be transformed into a normal distribution.")
             print("Instead, it has been transformed into a binary (0/1) distribution.")
+
     # Plot visualisations
     if messages:
         fig, axs = plt.subplots(1, 2, figsize=FIG_SIZE, dpi=FIG_DPI)
@@ -771,11 +780,16 @@ def skew_correct(df, feature, max_power=103, messages=True):
                 df_temp.loc[df_temp["corrected"] == df_temp["corrected"].max(), "corrected"] = 1
                 df_temp.loc[df_temp["corrected"] < df_temp["corrected"].max(), "corrected"] = 0
             sns.countplot(data=df_temp, x="corrected", color="g", ax=axs[1])
+        plt.suptitle(f"Skew of {feature} before and after transformation", fontsize=29)
         plt.setp(axs, yticks=[])
         plt.tight_layout()
         plt.show()
     return df
 
+
+def test_skew_correct(df):
+    for col in df.columns:
+        df = skew_correct(df_insurance, col)
 
 
 ## Missing Data
@@ -846,3 +860,7 @@ skew_correct(df_airbnb, "number_of_reviews")
 skew_correct(df_airline_satisfaction, "Flight Distance")
 skew_correct(df_airline_satisfaction, "Departure Delay in Minutes")
 skew_correct(df_airline_satisfaction, "Arrival Delay in Minutes")
+
+
+test_skew_correct(df_airbnb)
+test_skew_correct(df_insurance)
