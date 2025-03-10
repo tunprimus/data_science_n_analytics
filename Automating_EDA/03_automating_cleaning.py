@@ -495,7 +495,7 @@ def clean_outlier_per_column(df, features=[], skew_threshold=1, handle_outliers=
 ### Newer All-at-once Methods Based on Clustering
 
 
-def clean_outlier_by_all_columns(df, drop_percent=0.02, distance_method="manhattan", min_samples=5, num_dp=4, num_cores_for_dbscan=LOGICAL_CORES-1, messages=True):
+def clean_outlier_by_all_columns(df, drop_percent=0.013, distance_method="manhattan", min_samples=5, num_dp=4, num_cores_for_dbscan=LOGICAL_CORES-1, messages=True):
     import matplotlib.pyplot as plt
     import numpy as np
     import pandas as pd
@@ -572,13 +572,20 @@ def clean_outlier_by_all_columns(df, drop_percent=0.02, distance_method="manhatt
     db_scan_time_end = time.time_ns()
     db_scan_time_diff_s = (db_scan_time_end - db_scan_time_start) / 1000000000
     outliers_per_eps_history["db_scan_duration_s"] = db_scan_time_diff_s
+    outliers_per_eps_history["distance_metric_used"] = distance_method
+    outliers_per_eps_history["min_samples_used"] = min_samples
+    outliers_per_eps_history["drop_percent_used"] = drop_percent
+    outliers_per_eps_history["timestamp"] = pd.Timestamp.now()
     if messages:
         print(f"Optimal eps value: {round(eps, num_dp)}")
         # print(f"History: {outliers_per_eps_history}")
         print(f"\nHistory:")
         for key01, val01 in outliers_per_eps_history.items():
             if not isinstance(val01, dict):
-                print(f"{key01}: {round(val01, num_dp)}")
+                if isinstance(val01, (int, float)):
+                    print(f"{key01}: {round(val01, num_dp)}")
+                else:
+                    print(f"{key01}: {val01}")
                 continue
             else:
                 print(f"{key01}")
