@@ -682,6 +682,25 @@ def clean_outlier_by_all_columns(df, drop_proportion=0.013, distance_method="man
 
 
 def skew_correct(df, feature, max_power=103, messages=True):
+    """
+    Corrects the skew of a given feature in a DataFrame by applying a transformation to achieve normality.
+
+    Parameters
+    ----------
+    df : pandas DataFrame
+        DataFrame containing the feature to correct
+    feature : str
+        Name of the feature to correct
+    max_power : int, optional
+        Maximum power to use for transformation. Default: 103
+    messages : bool, optional
+        If `True`, print messages about the transformation. Default: True
+
+    Returns
+    -------
+    df : pandas DataFrame
+        DataFrame with the corrected feature
+    """
     import matplotlib.pyplot as plt
     import numpy as np
     import pandas as pd
@@ -812,6 +831,29 @@ def test_skew_correct(df):
 ##### replace with mean/median/mode
 
 def missing_drop(df, label="", features=[], row_threshold=0.90, col_threshold=0.50, messages=True):
+    """
+    Drop all columns and rows that have more missing values than the given threshold.
+
+    Parameters
+    ----------
+    df : pandas DataFrame
+        DataFrame to drop missing values from
+    label : str, default ""
+        Label to drop columns with
+    features : list of str, default []
+        Columns to consider for dropping
+    row_threshold : float, default 0.90
+        Threshold to determine if a row is missing too many values
+    col_threshold : float, default 0.50
+        Threshold to determine if a column is missing too many values
+    messages : bool, default True
+        If `True`, print messages indicating which columns were dropped and how many missing values were dropped
+
+    Returns
+    -------
+    df : pandas DataFrame
+        DataFrame with columns and rows dropped
+    """
     import pandas as pd
 
     pd.set_option("mode.copy_on_write", True)
