@@ -39,6 +39,7 @@ FIG_DPI = 72
 ## Some Useful Functions
 ##*********************##
 
+
 def cpu_logical_cores_count():
     """
     Return the number of logical cores on the machine.
@@ -54,6 +55,7 @@ def cpu_logical_cores_count():
     import psutil
     import re
     import subprocess
+
     # For Python 2.6+
     # Using multiprocessing module
     try:
@@ -114,6 +116,7 @@ def cpu_logical_cores_count():
     # Jython
     try:
         from java.lang import Runtime
+
         runtime = Runtime.getRuntime()
         res = runtime.availableProcessors()
         if res > 0:
@@ -133,7 +136,7 @@ def cpu_logical_cores_count():
         pass
     # Linux
     try:
-        with (open("/proc/cpuinfo")) as fin:
+        with open("/proc/cpuinfo") as fin:
             res = fin.read().count("processor\t:")
             if res > 0:
                 n_log_cores = res
@@ -178,7 +181,10 @@ LOGICAL_CORES = cpu_logical_cores_count()
 
 ### Eliminate Empty Columns, Columns with All Unique Values and Columns with Single Values
 
-def basic_wrangling(df, features=[], missing_threshold=0.95, unique_threshold=0.95, messages=True):
+
+def basic_wrangling(
+    df, features=[], missing_threshold=0.95, unique_threshold=0.95, messages=True
+):
     import pandas as pd
 
     all_cols = df.columns
@@ -191,12 +197,16 @@ def basic_wrangling(df, features=[], missing_threshold=0.95, unique_threshold=0.
             rows = df.shape[0]
             if (missing / rows) >= missing_threshold:
                 if messages:
-                    print(f"Too much missing ({missing} out of {rows} rows, {round(((missing / rows) * 100), 1)}%) for {feat}")
+                    print(
+                        f"Too much missing ({missing} out of {rows} rows, {round(((missing / rows) * 100), 1)}%) for {feat}"
+                    )
                 df.drop(columns=[feat], inplace=True)
             elif (unique / rows) >= unique_threshold:
-                if (df[feat].dtype in ["int64", "object"]):
+                if df[feat].dtype in ["int64", "object"]:
                     if messages:
-                        print(f"Too many unique values ({unique} out of {rows} rows, {round(((unique / rows) * 100), 1)}%) for {feat}")
+                        print(
+                            f"Too many unique values ({unique} out of {rows} rows, {round(((unique / rows) * 100), 1)}%) for {feat}"
+                        )
                     df.drop(columns=[feat], inplace=True)
             elif unique == 1:
                 if messages:
@@ -204,14 +214,18 @@ def basic_wrangling(df, features=[], missing_threshold=0.95, unique_threshold=0.
                 df.drop(columns=[feat], inplace=True)
     else:
         if messages:
-            print(f"The feature \'{feat}\' does not exist as spelled in the DataFrame provided.")
+            print(
+                f"The feature '{feat}' does not exist as spelled in the DataFrame provided."
+            )
     return df
-
 
 
 ### Date and Time Management
 
-def can_convert_dataframe_to_datetime(df, col_list=[], return_result=True, messages=False):
+
+def can_convert_dataframe_to_datetime(
+    df, col_list=[], return_result=True, messages=False
+):
     """
     Check if columns in a DataFrame can be converted to datetime format.
 
@@ -278,8 +292,14 @@ def can_convert_dataframe_to_datetime(df, col_list=[], return_result=True, messa
         return result
 
 
-
-def batch_convert_to_datetime(df, split_datetime=True, add_hr_min_sec=False, days_to_today=False, drop_date=True, messages=True):
+def batch_convert_to_datetime(
+    df,
+    split_datetime=True,
+    add_hr_min_sec=False,
+    days_to_today=False,
+    drop_date=True,
+    messages=True,
+):
     """
     Convert object columns in a DataFrame to datetime format if possible.
 
@@ -314,7 +334,10 @@ def batch_convert_to_datetime(df, split_datetime=True, add_hr_min_sec=False, day
             try:
                 df_flt_tmp = df[col].astype(np.float64)
                 if messages:
-                    print(f"Warning, NOT converting column '{col}', because it is ALSO convertible to float64.", file=sys.stderr)
+                    print(
+                        f"Warning, NOT converting column '{col}', because it is ALSO convertible to float64.",
+                        file=sys.stderr,
+                    )
             except:
                 df[col] = df_dt_tmp
                 if split_datetime:
@@ -328,11 +351,15 @@ def batch_convert_to_datetime(df, split_datetime=True, add_hr_min_sec=False, day
                     df[f"{col}_minute"] = df[col].dt.minute
                     df[f"{col}_second"] = df[col].dt.second
                 if days_to_today:
-                    df[f"{col}_days_to_today"] = (pd.to_datetime("now") - df[col]).dt.days
+                    df[f"{col}_days_to_today"] = (
+                        pd.to_datetime("now") - df[col]
+                    ).dt.days
                 if drop_date:
                     df.drop(columns=[col], inplace=True)
                 if messages:
-                    print(f"FYI, converted column '{col}' to datetime.", file=sys.stderr)
+                    print(
+                        f"FYI, converted column '{col}' to datetime.", file=sys.stderr
+                    )
                     print(f"Is '{df[col]}' now datetime? {is_datetime(df[col])}")
         # Cannot convert some elements of the column to datetime...
         except:
@@ -340,7 +367,9 @@ def batch_convert_to_datetime(df, split_datetime=True, add_hr_min_sec=False, day
     return df
 
 
-def parse_column_as_date(df, features=[], days_to_today=False, drop_date=True, messages=True):
+def parse_column_as_date(
+    df, features=[], days_to_today=False, drop_date=True, messages=True
+):
     """
     Parse specified date features in a DataFrame and extract related information.
 
@@ -381,11 +410,14 @@ def parse_column_as_date(df, features=[], days_to_today=False, drop_date=True, m
                     df.drop(columns=[feat], inplace=True)
             except:
                 if messages:
-                    print(f"Could not convert feature \'{feat}\' to datetime.")
+                    print(f"Could not convert feature '{feat}' to datetime.")
         else:
             if messages:
-                print(f"Feature \'{feat}\' does not exist as spelled in the DataFrame provided.")
+                print(
+                    f"Feature '{feat}' does not exist as spelled in the DataFrame provided."
+                )
     return df
+
 
 ### Bin Low Count Groups Values
 
@@ -413,14 +445,21 @@ def bin_categories(df, features=[], cutoff=0.05, replace_with="Other", messages=
         DataFrame with low count groups binned
     """
     import pandas as pd
+
     for feat in features:
         if feat in df.columns:
             if not pd.api.types.is_numeric_dtype(df[feat]):
-                other_list = df[feat].value_counts()[(df[feat].value_counts() / df.shape[0]) < cutoff].index
+                other_list = (
+                    df[feat]
+                    .value_counts()[(df[feat].value_counts() / df.shape[0]) < cutoff]
+                    .index
+                )
                 df.loc[df[feat].isin(other_list), feat] = replace_with
         else:
             if messages:
-                print(f"The feature \'{feat}\' does not exist in the DataFrame provided. No binning performed.")
+                print(
+                    f"The feature '{feat}' does not exist in the DataFrame provided. No binning performed."
+                )
     return df
 
 
@@ -429,7 +468,10 @@ def bin_categories(df, features=[], cutoff=0.05, replace_with="Other", messages=
 
 ### Traditional One-at-a-time Methods
 
-def clean_outlier_per_column(df, features=[], skew_threshold=1, handle_outliers="remove", num_dp=4, messages=True):
+
+def clean_outlier_per_column(
+    df, features=[], skew_threshold=1, handle_outliers="remove", num_dp=4, messages=True
+):
     """
     Clean outliers from a column in a DataFrame
 
@@ -457,6 +499,7 @@ def clean_outlier_per_column(df, features=[], skew_threshold=1, handle_outliers=
     import numpy as np
     from sklearn.experimental import enable_iterative_imputer
     from sklearn.impute import IterativeImputer
+
     # Monkey patching NumPy >= 1.24 in order to successfully import model from sklearn and other libraries
     np.float = np.float64
     np.int = np.int_
@@ -499,10 +542,19 @@ def clean_outlier_per_column(df, features=[], skew_threshold=1, handle_outliers=
                                 df.loc[df[feat] > hi_bound, feat] = np.nan
                                 imputer = IterativeImputer(max_iter=10)
                                 df_temp = df.copy()
-                                df_temp = bin_categories(df_temp, features=df_temp.columns, messages=False)
-                                df_temp = basic_wrangling(df_temp, features=df_temp.columns, messages=False)
+                                df_temp = bin_categories(
+                                    df_temp, features=df_temp.columns, messages=False
+                                )
+                                df_temp = basic_wrangling(
+                                    df_temp, features=df_temp.columns, messages=False
+                                )
                                 df_temp = pd.get_dummies(df_temp, drop_first=True)
-                                df_temp = pd.DataFrame(imputer.fit_transform(df_temp), columns=df_temp.columns, index=df_temp.index, dtype="float")
+                                df_temp = pd.DataFrame(
+                                    imputer.fit_transform(df_temp),
+                                    columns=df_temp.columns,
+                                    index=df_temp.index,
+                                    dtype="float",
+                                )
                                 df_temp.columns = df_temp.columns.get_level_values(0)
                                 df_temp.index = df_temp.index.astype("int64")
                                 # Save only the column from df_temp being iterated on
@@ -512,25 +564,42 @@ def clean_outlier_per_column(df, features=[], skew_threshold=1, handle_outliers=
                                 df.loc[df[feat] < lo_bound, feat] = np.nan
                                 df.loc[df[feat] > hi_bound, feat] = np.nan
                         if messages:
-                            print(f"Feature \'{feat}\' has {min_count} value(s) below the lower bound ({round(lo_bound, num_dp)}) and {max_count} value(s) above the upper bound ({round(hi_bound, num_dp)}).")
+                            print(
+                                f"Feature '{feat}' has {min_count} value(s) below the lower bound ({round(lo_bound, num_dp)}) and {max_count} value(s) above the upper bound ({round(hi_bound, num_dp)})."
+                            )
                     else:
                         if messages:
-                            print(f"Feature \'{feat}\' is dummy coded (0, 1) and was ignored.")
+                            print(
+                                f"Feature '{feat}' is dummy coded (0, 1) and was ignored."
+                            )
                 else:
                     if messages:
-                        print(f"Feature \'{feat}\' has only one unique value ({df[feat].unique()[0]}).")
+                        print(
+                            f"Feature '{feat}' has only one unique value ({df[feat].unique()[0]})."
+                        )
             else:
                 if messages:
-                    print(f"Feature \'{feat}\' is categorical and was ignored.")
+                    print(f"Feature '{feat}' is categorical and was ignored.")
         else:
             if messages:
-                print(f"Feature \'{feat}\' does not exist in the DataFrame provided. No outlier removal performed.")
+                print(
+                    f"Feature '{feat}' does not exist in the DataFrame provided. No outlier removal performed."
+                )
     return df
+
 
 ### Newer All-at-once Methods Based on Clustering
 
 
-def clean_outlier_by_all_columns(df, drop_proportion=0.013, distance_method="manhattan", min_samples=5, num_dp=4, num_cores_for_dbscan=LOGICAL_CORES-2 if LOGICAL_CORES > 3 else 1, messages=True):
+def clean_outlier_by_all_columns(
+    df,
+    drop_proportion=0.013,
+    distance_method="manhattan",
+    min_samples=5,
+    num_dp=4,
+    num_cores_for_dbscan=LOGICAL_CORES - 2 if LOGICAL_CORES > 3 else 1,
+    messages=True,
+):
     """
     Clean outliers from a DataFrame based on a range of eps values.
 
@@ -587,7 +656,11 @@ def clean_outlier_by_all_columns(df, drop_proportion=0.013, distance_method="man
     df_temp = basic_wrangling(df_temp, features=df_temp.columns, messages=False)
     df_temp = pd.get_dummies(df_temp, drop_first=True)
     # Normalise the data
-    df_temp = pd.DataFrame(preprocessing.MinMaxScaler().fit_transform(df_temp), columns=df_temp.columns, index=df_temp.index)
+    df_temp = pd.DataFrame(
+        preprocessing.MinMaxScaler().fit_transform(df_temp),
+        columns=df_temp.columns,
+        index=df_temp.index,
+    )
     # Calculate outliers based on a range of eps values
     outliers_per_eps = []
     outliers_per_eps_history = {}
@@ -617,23 +690,41 @@ def clean_outlier_by_all_columns(df, drop_proportion=0.013, distance_method="man
     while outliers > 0:
         loop_start_time = time.time_ns()
         eps_loop += INCREMENT_VAL
-        db_loop = DBSCAN(eps=eps_loop, metric=distance_method, min_samples=min_samples, n_jobs=num_cores_for_dbscan).fit(df_temp)
+        db_loop = DBSCAN(
+            eps=eps_loop,
+            metric=distance_method,
+            min_samples=min_samples,
+            n_jobs=num_cores_for_dbscan,
+        ).fit(df_temp)
         outliers = np.count_nonzero(db_loop.labels_ == -1)
         outliers_per_eps.append(outliers)
         outliers_percent = (outliers / row_count) * 100
         outliers_per_eps_history[f"{counter}_trial"] = {}
-        outliers_per_eps_history[f"{counter}_trial"]["eps_val"] = round(eps_loop, num_dp)
+        outliers_per_eps_history[f"{counter}_trial"]["eps_val"] = round(
+            eps_loop, num_dp
+        )
         outliers_per_eps_history[f"{counter}_trial"]["outliers"] = outliers
-        outliers_per_eps_history[f"{counter}_trial"]["outliers_percent"] = round(outliers_percent, num_dp)
+        outliers_per_eps_history[f"{counter}_trial"]["outliers_percent"] = round(
+            outliers_percent, num_dp
+        )
         loop_end_time = time.time_ns()
-        loop_time_diff_ns = (loop_end_time - loop_start_time)
+        loop_time_diff_ns = loop_end_time - loop_start_time
         loop_time_diff_s = (loop_end_time - loop_start_time) / 1000000000
-        outliers_per_eps_history[f"{counter}_trial"]["loop_duration_ns"] = loop_time_diff_ns
-        outliers_per_eps_history[f"{counter}_trial"]["loop_duration_s"] = loop_time_diff_s
+        outliers_per_eps_history[f"{counter}_trial"][
+            "loop_duration_ns"
+        ] = loop_time_diff_ns
+        outliers_per_eps_history[f"{counter}_trial"][
+            "loop_duration_s"
+        ] = loop_time_diff_s
         counter += 1
         if messages:
-            print(f"eps = {round(eps_loop, num_dp)}, (outliers: {outliers}, percent: {round(outliers_percent, num_dp)}% in {round(loop_time_diff_s, num_dp)}s)")
-    to_drop = min(outliers_per_eps, key=lambda x: abs(x - round((drop_percent * row_count), num_dp)))
+            print(
+                f"eps = {round(eps_loop, num_dp)}, (outliers: {outliers}, percent: {round(outliers_percent, num_dp)}% in {round(loop_time_diff_s, num_dp)}s)"
+            )
+    to_drop = min(
+        outliers_per_eps,
+        key=lambda x: abs(x - round((drop_percent * row_count), num_dp)),
+    )
     # Find the optimal eps value
     eps = (outliers_per_eps.index(to_drop) + 1) * INCREMENT_VAL
     outliers_per_eps_history["optimal_eps"] = eps
@@ -661,12 +752,19 @@ def clean_outlier_by_all_columns(df, drop_proportion=0.013, distance_method="man
                     print(f"{key02}: {round(val02, num_dp)}")
                 print("*********************")
             print()
-    db = DBSCAN(eps=eps, metric=distance_method, min_samples=min_samples, n_jobs=num_cores_for_dbscan).fit(df_temp)
+    db = DBSCAN(
+        eps=eps,
+        metric=distance_method,
+        min_samples=min_samples,
+        n_jobs=num_cores_for_dbscan,
+    ).fit(df_temp)
     df["outlier"] = db.labels_
     if messages:
-        print(f"{df[df['outlier'] == -1].shape[0]} row(s) of outliers found for removal.")
+        print(
+            f"{df[df['outlier'] == -1].shape[0]} row(s) of outliers found for removal."
+        )
         sns.lineplot(x=range(1, len(outliers_per_eps) + 1), y=outliers_per_eps)
-        sns.scatterplot(x=[eps/INCREMENT_VAL], y=[to_drop])
+        sns.scatterplot(x=[eps / INCREMENT_VAL], y=[to_drop])
         plt.xlabel(f"eps (divided by {INCREMENT_VAL})")
         plt.ylabel("Number of outliers")
         plt.show()
@@ -674,7 +772,6 @@ def clean_outlier_by_all_columns(df, drop_proportion=0.013, distance_method="man
     df = df[df["outlier"] != -1]
     # df.drop("outlier", axis="columns", inplace=True)
     return df
-
 
 
 ## Skewness
@@ -727,13 +824,17 @@ def skew_correct(df, feature, max_power=103, messages=True):
     # Check to use only numerical features
     if not pd.api.types.is_numeric_dtype(df[feature]):
         if messages:
-            print(f"The feature \'{feature}\' is not numerical. No transformation performed.")
+            print(
+                f"The feature '{feature}' is not numerical. No transformation performed."
+            )
         return df
 
     # Clean out missing data
     df = basic_wrangling(df, messages=False)
     if messages:
-        print(f"{df.shape[0] - df.dropna().shape[0]} row(s) with missing values dropped.")
+        print(
+            f"{df.shape[0] - df.dropna().shape[0]} row(s) with missing values dropped."
+        )
     df.dropna(inplace=True)
 
     # In case the dataset is too big, use a subsample
@@ -749,7 +850,7 @@ def skew_correct(df, feature, max_power=103, messages=True):
     while (round(skew, 2) != 0) and (exp_val <= max_power):
         exp_val += 0.01
         if skew > 0:
-            skew = np.power(df_temp[feature], 1/exp_val).skew()
+            skew = np.power(df_temp[feature], 1 / exp_val).skew()
         else:
             skew = np.power(df_temp[feature], exp_val).skew()
     if messages:
@@ -758,7 +859,7 @@ def skew_correct(df, feature, max_power=103, messages=True):
     # Make the transformed version of the feature in the df DataFrame
     if (skew > -0.1) and (skew < 0.1):
         if skew > 0:
-            corrected = np.power(df[feature], 1/round(exp_val, 3))
+            corrected = np.power(df[feature], 1 / round(exp_val, 3))
             name = f"{feature}_1/{round(exp_val, 3)}"
         else:
             corrected = np.power(df[feature], round(exp_val, 3))
@@ -775,7 +876,9 @@ def skew_correct(df, feature, max_power=103, messages=True):
             df.loc[df[name] == df[name].value_counts().index[0], name] = 1
             df.loc[df[name] != df[name].value_counts().index[0], name] = 0
         if messages:
-            print(f"The feature {feature} could not be transformed into a normal distribution.")
+            print(
+                f"The feature {feature} could not be transformed into a normal distribution."
+            )
             print("Instead, it has been transformed into a binary (0/1) distribution.")
 
     # Plot visualisations
@@ -785,7 +888,7 @@ def skew_correct(df, feature, max_power=103, messages=True):
         sns.histplot(df_temp[feature], color="b", ax=axs[0], kde=True)
         if (skew > -0.1) and (skew < 0.1):
             if skew > 0:
-                corrected = np.power(df_temp[feature], 1/round(exp_val, 3))
+                corrected = np.power(df_temp[feature], 1 / round(exp_val, 3))
             else:
                 corrected = np.power(df_temp[feature], round(exp_val, 3))
             df_temp["corrected"] = corrected
@@ -793,11 +896,19 @@ def skew_correct(df, feature, max_power=103, messages=True):
         else:
             df_temp["corrected"] = df_temp[feature]
             if skew > 0:
-                df_temp.loc[df_temp["corrected"] == df_temp["corrected"].min(), "corrected"] = 0
-                df_temp.loc[df_temp["corrected"] > df_temp["corrected"].min(), "corrected"] = 1
+                df_temp.loc[
+                    df_temp["corrected"] == df_temp["corrected"].min(), "corrected"
+                ] = 0
+                df_temp.loc[
+                    df_temp["corrected"] > df_temp["corrected"].min(), "corrected"
+                ] = 1
             else:
-                df_temp.loc[df_temp["corrected"] == df_temp["corrected"].max(), "corrected"] = 1
-                df_temp.loc[df_temp["corrected"] < df_temp["corrected"].max(), "corrected"] = 0
+                df_temp.loc[
+                    df_temp["corrected"] == df_temp["corrected"].max(), "corrected"
+                ] = 1
+                df_temp.loc[
+                    df_temp["corrected"] < df_temp["corrected"].max(), "corrected"
+                ] = 0
             sns.countplot(data=df_temp, x="corrected", color="g", ax=axs[1])
         plt.suptitle(f"Skew of {feature} before and after transformation", fontsize=29)
         plt.setp(axs, yticks=[])
@@ -818,19 +929,18 @@ def test_skew_correct(df):
 #### Replace with a theoretical value
 
 
-
-
 ### Missing Completely At Random (MCAR)
 #### Impute a value
-
-
 
 
 ### Missing At Random (MAR)
 #### Drop columns/rows or
 ##### replace with mean/median/mode
 
-def missing_drop(df, label="", features=[], row_threshold=0.90, col_threshold=0.50, messages=True):
+
+def missing_drop(
+    df, label="", features=[], row_threshold=0.90, col_threshold=0.50, messages=True
+):
     """
     Drop all columns and rows that have more missing values than the given threshold.
 
@@ -863,24 +973,45 @@ def missing_drop(df, label="", features=[], row_threshold=0.90, col_threshold=0.
     col_thresh_val = round((col_threshold * df.shape[0]), 0)
     missing_col_thresh = df.shape[0] - col_thresh_val
     if messages:
-        print(start_count, "out of", df.shape[0] * df.shape[1], "in", df.shape[0], "rows(s)")
-        print(f"Going to drop any column with more than {missing_col_thresh} missing value(s).")
+        print(
+            start_count,
+            "out of",
+            df.shape[0] * df.shape[1],
+            "in",
+            df.shape[0],
+            "rows(s)",
+        )
+        print(
+            f"Going to drop any column with more than {missing_col_thresh} missing value(s)."
+        )
     df.dropna(axis=1, thresh=col_thresh_val, inplace=True)
     # Drop all rows that have less data than the proportion row_threshold requires
     row_thresh_val = round((row_threshold * df.shape[1]), 0)
     missing_row_thresh = df.shape[1] - row_thresh_val
     if messages:
-        print(start_count, "out of", df.shape[0] * df.shape[1], "in", df.shape[1], "column(s)")
-        print(f"Going to drop any row with more than {missing_row_thresh} missing value(s).")
+        print(
+            start_count,
+            "out of",
+            df.shape[0] * df.shape[1],
+            "in",
+            df.shape[1],
+            "column(s)",
+        )
+        print(
+            f"Going to drop any row with more than {missing_row_thresh} missing value(s)."
+        )
     df.dropna(axis=0, thresh=row_thresh_val, inplace=True)
     # Drop all column(s) of given label(s)
     if label != "":
         df.dropna(axis=0, subset=[label], inplace=True)
         if messages:
             print(f"Dropped all column(s) with {label} feature(s).")
+
     # Function to generate table of residuals if rows/columns with missing values are dropped
     def generate_missing_table():
-        df_results = pd.DataFrame(columns=["num_missing", "after_column_drop", "after_rows_drop"])
+        df_results = pd.DataFrame(
+            columns=["num_missing", "after_column_drop", "after_rows_drop"]
+        )
         for feat in df:
             missing = df[feat].isna().sum()
             if missing > 0:
@@ -888,6 +1019,7 @@ def missing_drop(df, label="", features=[], row_threshold=0.90, col_threshold=0.
                 rem_rows = df.dropna(subset=[feat]).count().sum()
                 df_results.loc[feat] = [missing, rem_col, rem_rows]
         return df_results
+
     df_results = generate_missing_table()
     while df_results.shape[0] > 0:
         max_val = df_results[["after_column_drop", "after_rows_drop"]].max(axis=1)[0]
@@ -902,15 +1034,16 @@ def missing_drop(df, label="", features=[], row_threshold=0.90, col_threshold=0.
             df.drop(columns=[df_results.index[0]], inplace=True)
         df_results = generate_missing_table()
     if messages:
-        print(f"{round(((df.count().sum() / start_count) * 100), 2)}% ({df.count().sum()} out of {start_count}) of non-null cells were kept after dropping.")
+        print(
+            f"{round(((df.count().sum() / start_count) * 100), 2)}% ({df.count().sum()} out of {start_count}) of non-null cells were kept after dropping."
+        )
     # Return the final DataFrame
     return df
 
 
-
-#--------#
+# --------#
 # TESTS  #
-#--------#
+# --------#
 
 basic_wrangling(df_insurance)
 basic_wrangling(df_nba_salaries)
@@ -921,7 +1054,9 @@ can_convert_dataframe_to_datetime(df_airbnb)
 can_convert_dataframe_to_datetime(df_airbnb, col_list=["name"])
 can_convert_dataframe_to_datetime(df_airbnb, col_list=["name"])[0]
 can_convert_dataframe_to_datetime(df_airbnb, col_list=["last_review"])[0]
-can_convert_dataframe_to_datetime(df_airbnb, col_list=["name", "last_review", "host_name"])
+can_convert_dataframe_to_datetime(
+    df_airbnb, col_list=["name", "last_review", "host_name"]
+)
 
 
 batch_convert_to_datetime(df_airbnb)
@@ -935,7 +1070,9 @@ bin_categories(df_airbnb, features=["neighbourhood"], cutoff=0.025)
 
 clean_outlier_per_column(df_insurance, features=df_insurance.columns)
 df_insurance.sort_values(by=["bmi"], ascending=False).head()
-df_ins_without_outliers = clean_outlier_per_column(df_insurance, features=df_insurance.columns)
+df_ins_without_outliers = clean_outlier_per_column(
+    df_insurance, features=df_insurance.columns
+)
 df_ins_without_outliers.sort_values(by=["bmi"], ascending=False).head()
 
 
@@ -945,7 +1082,9 @@ df_insurance_ohne_outliers.sample(RANDOM_SAMPLE_SIZE)
 
 df_nba_salaries_ohne_outliers = clean_outlier_by_all_columns(df_nba_salaries)
 df_airbnb_ohne_outliers = clean_outlier_by_all_columns(df_airbnb)
-df_airline_satisfaction_ohne_outliers = clean_outlier_by_all_columns(df_airline_satisfaction)
+df_airline_satisfaction_ohne_outliers = clean_outlier_by_all_columns(
+    df_airline_satisfaction
+)
 
 
 skew_correct(df_insurance, "charges")
@@ -967,4 +1106,3 @@ missing_drop(df_insurance.copy()).isna().sum()
 df_airbnb_ohne_missing = missing_drop(df_airbnb.copy())
 df_airbnb.isna().sum()
 df_airbnb_ohne_missing.isna().sum()
-
