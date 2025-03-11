@@ -796,20 +796,73 @@ def test_skew_correct(df):
 ##*********************##
 
 ### Missing Not At Random (MNAR)
+#### Replace with a theoretical value
 
 
 
 
 ### Missing Completely At Random (MCAR)
-
+#### Impute a value
 
 
 
 
 ### Missing At Random (MAR)
+#### Drop columns/rows or
+##### replace with mean/median/mode
 
+def missing_drop(df, label="", features=[], row_threshold=0.90, col_threshold=0.50, messages=True):
+    import pandas as pd
 
+    pd.set_option("mode.copy_on_write", True)
 
+    start_count = df.count().sum()
+    # Drop all columns that have less data than the proportion col_threshold requires
+    col_thresh_val = round((col_threshold * df.shape[0]), 0)
+    missing_col_thresh = df.shape[0] - col_thresh_val
+    if messages:
+        print(start_count, "out of", df.shape[0] * df.shape[1], "in", df.shape[0], "rows(s)")
+        print(f"Going to drop any column with more than {missing_col_thresh} missing value(s).")
+    df.dropna(axis=1, thresh=col_thresh_val, inplace=True)
+    # Drop all rows that have less data than the proportion row_threshold requires
+    row_thresh_val = round((row_threshold * df.shape[1]), 0)
+    missing_row_thresh = df.shape[1] - row_thresh_val
+    if messages:
+        print(start_count, "out of", df.shape[0] * df.shape[1], "in", df.shape[1], "column(s)")
+        print(f"Going to drop any row with more than {missing_row_thresh} missing value(s).")
+    df.dropna(axis=0, thresh=row_thresh_val, inplace=True)
+    # Drop all column(s) of given label(s)
+    if label != "":
+        df.dropna(axis=0, subset=[label], inplace=True)
+        if messages:
+            print(f"Dropped all column(s) with {label} feature(s).")
+    # Function to generate table of residuals if rows/columns with missing values are dropped
+    def generate_missing_table():
+        df_results = pd.DataFrame(columns=["num_missing", "after_column_drop", "after_rows_drop"])
+        for feat in df:
+            missing = df[feat].isna().sum()
+            if missing > 0:
+                rem_col = df.drop(columns=[feat]).count().sum()
+                rem_rows = df.dropna(subset=[feat]).count().sum()
+                df_results.loc[feat] = [missing, rem_col, rem_rows]
+        return df_results
+    df_results = generate_missing_table()
+    while df_results.shape[0] > 0:
+        max_val = df_results[["after_column_drop", "after_rows_drop"]].max(axis=1)[0]
+        max_val_axis = df_results.columns[df_results.isin([max_val]).any()][0]
+        print(max_val, max_val_axis)
+        df_results.sort_values(by=[max_val_axis], ascending=False, inplace=True)
+        if messages:
+            print("\n", df_results)
+        if max_val_axis == "after_rows_drop":
+            df.dropna(axis=0, subset=[df_results.index[0]], inplace=True)
+        else:
+            df.drop(columns=[df_results.index[0]], inplace=True)
+        df_results = generate_missing_table()
+    if messages:
+        print(f"{round(((df.count().sum() / start_count) * 100), 2)}% ({df.count().sum()} out of {start_count}) of non-null cells were kept after dropping.")
+    # Return the final DataFrame
+    return df
 
 
 
@@ -864,3 +917,12 @@ skew_correct(df_airline_satisfaction, "Arrival Delay in Minutes")
 
 test_skew_correct(df_airbnb)
 test_skew_correct(df_insurance)
+
+
+missing_drop(df_insurance.copy())
+df_insurance.isna().sum()
+missing_drop(df_insurance.copy()).isna().sum()
+df_airbnb_ohne_missing = missing_drop(df_airbnb.copy())
+df_airbnb.isna().sum()
+df_airbnb_ohne_missing.isna().sum()
+
