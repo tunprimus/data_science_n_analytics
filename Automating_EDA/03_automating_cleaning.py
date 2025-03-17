@@ -183,9 +183,47 @@ LOGICAL_CORES = cpu_logical_cores_count()
 
 
 def basic_wrangling(
-    df, features=[], missing_threshold=0.95, unique_threshold=0.95, messages=True
+    df, features=[], drop_duplicates=False, drop_duplicates_subset_name=None, missing_threshold=0.95, unique_threshold=0.95, messages=True
 ):
+    """
+    Perform basic data wrangling on a DataFrame, including renaming columns,
+    dropping duplicates, and removing columns with excessive missing or unique values.
+
+    Parameters
+    ----------
+    df : pandas DataFrame
+        The DataFrame to be wrangled.
+    features : list of str, optional
+        List of column names to focus on. If empty, all columns are considered.
+    drop_duplicates : bool, default False
+        Whether to drop duplicate rows.
+    drop_duplicates_subset_name : str, optional
+        Column name to consider when dropping duplicates. If None, all columns are considered.
+    missing_threshold : float, default 0.95
+        Threshold for dropping columns with a high proportion of missing values.
+    unique_threshold : float, default 0.95
+        Threshold for dropping columns with a high proportion of unique values.
+    messages : bool, default True
+        If True, print messages about the operations performed.
+
+    Returns
+    -------
+    df : pandas DataFrame
+        The wrangled DataFrame.
+    """
     import pandas as pd
+
+    df.columns = df.columns.str.lower().str.strip().str.replace(" ", "_")
+
+    if drop_duplicates:
+        if drop_duplicates_subset_name is None:
+            df.drop_duplicates(inplace=True)
+            if messages:
+                print("Dropped duplicate rows across all columns.")
+        else:
+            df = df.drop_duplicates(subset=[drop_duplicates_subset_name])
+            if messages:
+                print("Dropped duplicate rows from desired column(s).")
 
     all_cols = df.columns
     if len(features) == 0:
@@ -723,7 +761,7 @@ def clean_outlier_by_all_columns(
             )
     to_drop = min(
         outliers_per_eps,
-        key=lambda x: abs(x - round((drop_percent * row_count), num_dp)),
+        key=lambda x: abs(x - round((drop_proportion * row_count), num_dp)),
     )
     # Find the optimal eps value
     eps = (outliers_per_eps.index(to_drop) + 1) * INCREMENT_VAL
