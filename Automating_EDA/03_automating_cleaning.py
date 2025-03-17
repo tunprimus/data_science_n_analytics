@@ -710,9 +710,11 @@ def clean_outlier_by_all_columns(
     df : pandas DataFrame
         DataFrame with outliers cleaned
     """
+    import fireducks.pandas as pd
+    import joblib
     import matplotlib.pyplot as plt
     import numpy as np
-    import pandas as pd
+    # import pandas as pd
     import seaborn as sns
     import time
     from sklearn import preprocessing
