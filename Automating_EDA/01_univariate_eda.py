@@ -23,8 +23,9 @@ def univariate_stats(df):
     statistics for each feature (column) in the input DataFrame `df`. It calculates
     metrics such as the data type, count of non-missing values, number of missing values,
     number of unique values, and mode for all features. For numerical features, it
-    additionally calculates minimum, first quartile, median, third quartile, maximum,
-    mean, standard deviation, skewness, and kurtosis. It also creates a histogram for
+    additionally calculates minimum, lower boundary of normal (2.5 percentile), first quartile,
+    median, third quartile, upper boundary of normal (97.5 percentile), maximum, mean,
+    standard deviation, skewness, and kurtosis. It also creates a histogram for
     numerical features and a count plot for categorical features.
 
     Parameters:
@@ -47,9 +48,11 @@ def univariate_stats(df):
             "unique",
             "mode",
             "min",
+            "lbn_2_5pct",
             "q1",
             "median",
             "q3",
+            "ubn_97_5pct",
             "max",
             "mean",
             "std",
@@ -68,9 +71,11 @@ def univariate_stats(df):
         if pd.api.types.is_numeric_dtype(df[col]):
             # Calculate metrics that apply only to numerical features
             min = df[col].min()
+            lbn_2_5pct = df[col].quantile(0.025)
             q1 = df[col].quantile(0.25)
             median = df[col].median()
             q3 = df[col].quantile(0.75)
+            ubn_97_5pct = df[col].quantile(0.975)
             max = df[col].max()
             mean = df[col].mean()
             std = df[col].std()
@@ -83,9 +88,11 @@ def univariate_stats(df):
                 unique,
                 mode,
                 min,
+                lbn_2_5pct,
                 q1,
                 median,
                 q3,
+                ubn_97_5pct,
                 max,
                 mean,
                 std,
@@ -100,6 +107,8 @@ def univariate_stats(df):
                 missing,
                 unique,
                 mode,
+                "--",
+                "--",
                 "--",
                 "--",
                 "--",
